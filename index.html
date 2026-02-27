@@ -204,6 +204,7 @@ tfoot td{padding:11px 14px;font-size:13px;background:var(--s2);border-top:2px so
     <div class="logo">成績<em>管理</em>系統</div>
     <div class="topnav-right">
       <div class="user-pill"><img id="adminAvatar" src="" alt=""><span id="adminName"></span></div>
+      <button class="btn btn-sm" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:var(--ylw);" onclick="openSimModal()">👁 模擬學生</button>
       <button class="btn btn-ghost btn-sm" onclick="doSignOut()">登出</button>
     </div>
   </div>
@@ -328,6 +329,28 @@ tfoot td{padding:11px 14px;font-size:13px;background:var(--s2);border-top:2px so
   </div>
 </div>
 
+
+<!-- Simulate Student Modal -->
+<div class="modal-bg hidden" id="M-sim" onclick="mbg(event,'M-sim')">
+  <div class="modal" style="max-width:420px;">
+    <h3>👁 模擬學生視角</h3>
+    <p style="color:var(--t2);font-size:13px;margin-bottom:16px;line-height:1.7;">選擇要模擬的學生，即可看到該學生登入後的成績畫面。</p>
+    <div class="form-row g2">
+      <div class="fg"><label>班級</label><select id="simClass" onchange="simLoadStus()"></select></div>
+      <div class="fg"><label>學生</label><select id="simStu"></select></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="cm('M-sim')">取消</button>
+      <button class="btn" style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);color:var(--ylw);" onclick="startSim()">開始模擬</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sim Banner (shown when simulating) -->
+<div id="simBanner" class="hidden" style="position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(245,158,11,.15);border-bottom:2px solid var(--ylw);padding:8px 20px;display:flex;align-items:center;gap:12px;">
+  <span style="color:var(--ylw);font-size:13px;font-weight:600;">👁 模擬視角：<span id="simBannerName"></span></span>
+  <button class="btn btn-sm" style="margin-left:auto;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.4);color:var(--ylw);" onclick="endSim()">✕ 結束模擬</button>
+</div>
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -351,7 +374,7 @@ const FB = {
   appId:"1:170384586457:web:ffe28a5f79156b6ee570c8"
 };
 /* ★ 老師 email（可多個）*/
-const ADMINS = ["019@tpjh.kh.edu.tw"];  // ← 改成你的 email
+const ADMINS = ["019@tpjh.kh.edu.tw"];
 
 const app  = initializeApp(FB);
 const auth = getAuth(app);
@@ -796,6 +819,55 @@ window.saveRebind=async()=>{
   await setDoc(doc(db,"bindings",uid),{...snap.data(),email,updatedAt:serverTimestamp()});
   toast("已更新"); cm("M-rebind"); loadBindList();
 };
+
+/* ══════════════════ SIMULATE STUDENT ══════════════════ */
+let simActive = false;
+
+window.openSimModal = () => {
+  $("simClass").innerHTML = classes.map(c=>`<option value="${c.name}">${c.name}</option>`).join("");
+  simLoadStus();
+  $("M-sim").classList.remove("hidden");
+};
+
+window.simLoadStus = async () => {
+  const cls = $("simClass").value;
+  const snap = await getDocs(query(collection(db,"students"), where("class","==",cls), orderBy("seat")));
+  $("simStu").innerHTML = snap.empty
+    ? '<option value="">此班尚無學生</option>'
+    : snap.docs.map(d=>`<option value="${d.id}">${d.data().seat}號 ${d.data().name}</option>`).join("");
+};
+
+window.startSim = async () => {
+  const stuId = $("simStu").value;
+  if(!stuId){ toast("請選擇學生","err"); return; }
+  const snap = await getDoc(doc(db,"students",stuId));
+  if(!snap.exists()) return;
+  const s = snap.data();
+  cm("M-sim");
+  simActive = true;
+
+  // show sim banner
+  $("simBannerName").textContent = `${s.class} 第${s.seat}號 ${s.name}`;
+  $("simBanner").classList.remove("hidden");
+
+  // fake user object for student view
+  const fakeUser = { email: "(模擬) "+s.name, photoURL:"", displayName:s.name, uid:"sim" };
+  const fakeBinding = { studentId:stuId, className:s.class, seat:s.seat, name:s.name };
+
+  // offset student screen top to account for sim banner
+  document.querySelector("#S-student > div").style.paddingTop = "108px";
+
+  await showStudentScreen(fakeUser, fakeBinding);
+};
+
+window.endSim = () => {
+  simActive = false;
+  $("simBanner").classList.add("hidden");
+  const stuDiv = document.querySelector("#S-student > div");
+  if(stuDiv) stuDiv.style.paddingTop = "72px";
+  showScreen("admin");
+};
+
 </script>
 </body>
 </html>
