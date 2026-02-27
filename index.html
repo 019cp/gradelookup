@@ -169,8 +169,7 @@ window.closeImport = () => $("importOverlay").classList.add("hidden");
 window.closeImportIfBg = e => { if(e.target===$("importOverlay")) closeImport(); };
 
 window.runImport = async () => {
-  const lines = $("importText").value.trim().split("
-").filter(l=>l.trim());
+  const lines = $("importText").value.trim().split("\n").filter(l=>l.trim());
   if (!lines.length) { showToast("請貼上學生名單","err"); return; }
 
   const preview = $("importPreview");
@@ -376,9 +375,9 @@ const FIREBASE_CONFIG = {
   appId:             "1:170384586457:web:ffe28a5f79156b6ee570c8"
 };
 
-/* ★ 把這裡改成你自己的 Google email，登入後就會看到管理介面 */
+/* ★ 改成你自己的 Google email */
 const ADMIN_EMAILS = [
-  "teacher@gmail.com"    // ← 改成你的 email！
+  "teacher@gmail.com"
 ];
 
 const app      = initializeApp(FIREBASE_CONFIG);
@@ -407,7 +406,7 @@ window.doSignOut = () => fbOut(auth);
 onAuthStateChanged(auth, async user => {
   if (!user) { show("s-login"); return; }
   show("s-loading");
-  if (ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(user.email.toLowerCase())) {
+  if (ADMIN_EMAILS.map(e => e.toLowerCase()).includes(user.email.toLowerCase())) {
     $("adminAvatar").src = user.photoURL || "";
     await loadAdminList();
     show("s-admin");
@@ -416,11 +415,11 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
-/* ════════════════════════════════════════════
+/* ════════════════════════════════════════
    STUDENT
-════════════════════════════════════════════ */
+════════════════════════════════════════ */
 async function loadStudentGrades(user) {
-  const q    = query(collection(db,"students"), where("email","==",user.email.toLowerCase()));
+  const q    = query(collection(db, "students"), where("email", "==", user.email.toLowerCase()));
   const snap = await getDocs(q);
   if (snap.empty) {
     $("noRecEmail").textContent = user.email;
@@ -429,20 +428,22 @@ async function loadStudentGrades(user) {
   const d = snap.docs[0].data();
   $("stuAvatar").src       = user.photoURL || "";
   $("stuName").textContent = d.name;
-  $("stuMeta").textContent = `${user.email}　｜　${d.class}　｜　${d.semester}`;
+  $("stuMeta").textContent = `${user.email}\u3000|\u3000${d.class}\u3000|\u3000${d.semester}`;
 
-  const scores = (d.subjects||[]).map(s=>s.score);
-  const total  = scores.reduce((a,b)=>a+b,0);
+  const scores = (d.subjects || []).map(s => s.score);
+  const total  = scores.reduce((a, b) => a + b, 0);
   $("sumTotal").textContent = total;
-  $("sumAvg").textContent   = scores.length ? (total/scores.length).toFixed(1) : "—";
+  $("sumAvg").textContent   = scores.length ? (total / scores.length).toFixed(1) : "—";
   $("sumRank").textContent  = d.rank || "—";
 
   const tbody = $("stuGradeBody");
   tbody.innerHTML = "";
-  (d.subjects||[]).forEach(sub => {
-    const c   = sub.score>=80?"s-pass":sub.score>=60?"s-mid":"s-fail";
-    const tag = sub.score>=60?'<span class="tag tag-ok">及格</span>':'<span class="tag tag-no">不及格</span>';
-    tbody.insertAdjacentHTML("beforeend",`
+  (d.subjects || []).forEach(sub => {
+    const c   = sub.score >= 80 ? "s-pass" : sub.score >= 60 ? "s-mid" : "s-fail";
+    const tag = sub.score >= 60
+      ? '<span class="tag tag-ok">及格</span>'
+      : '<span class="tag tag-no">不及格</span>';
+    tbody.insertAdjacentHTML("beforeend", `
       <tr>
         <td>${sub.name}</td>
         <td><div class="score-wrap ${c}">
@@ -452,15 +453,15 @@ async function loadStudentGrades(user) {
         <td>${tag}</td>
       </tr>`);
   });
-  setTimeout(()=>document.querySelectorAll(".bar").forEach(b=>b.style.width=b.dataset.w),120);
+  setTimeout(() => document.querySelectorAll(".bar").forEach(b => b.style.width = b.dataset.w), 120);
   show("s-student");
 }
 
-/* ════════════════════════════════════════════
-   ADMIN
-════════════════════════════════════════════ */
+/* ════════════════════════════════════════
+   ADMIN — 學生清單
+════════════════════════════════════════ */
 async function loadAdminList() {
-  const snap = await getDocs(collection(db,"students"));
+  const snap = await getDocs(collection(db, "students"));
   const list = $("adminList");
   list.innerHTML = "";
   if (snap.empty) {
@@ -469,13 +470,13 @@ async function loadAdminList() {
   }
   snap.forEach(ds => {
     const d = ds.data();
-    const scores = (d.subjects||[]).map(s=>s.score);
-    const avg = scores.length?(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1):"—";
-    list.insertAdjacentHTML("beforeend",`
+    const scores = (d.subjects || []).map(s => s.score);
+    const avg = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : "—";
+    list.insertAdjacentHTML("beforeend", `
       <div class="stu-row">
         <div class="stu-row-info">
           <h4>${d.name} <span style="font-size:12px;color:var(--muted);font-weight:400">${d.class} ／ ${d.semester}</span></h4>
-          <div class="sub">${d.email}　｜　平均 ${avg}　｜　排名 ${d.rank||"—"}</div>
+          <div class="sub">${d.email}　｜　平均 ${avg}　｜　排名 ${d.rank || "—"}</div>
         </div>
         <div class="stu-row-actions">
           <button class="btn btn-secondary btn-sm" onclick="editStudent('${ds.id}')">編輯</button>
@@ -485,22 +486,24 @@ async function loadAdminList() {
   });
 }
 
-/* ── Modal ── */
+/* ════════════════════════════════════════
+   ADMIN — 單筆新增 / 編輯 Modal
+════════════════════════════════════════ */
 let editingId = null;
 
 window.openModal = () => {
   editingId = null;
   $("modalTitle").textContent = "新增學生成績";
-  ["fEmail","fName","fClass","fSemester","fRank"].forEach(id => $(id).value="");
+  ["fEmail","fName","fClass","fSemester","fRank"].forEach(id => $(id).value = "");
   $("fEmail").disabled = false;
   $("subjectRows").innerHTML = "";
   addSubjectRow(); addSubjectRow(); addSubjectRow();
   $("modalOverlay").classList.remove("hidden");
 };
-window.closeModal = () => $("modalOverlay").classList.add("hidden");
-window.closeModalIfBg = e => { if(e.target===$("modalOverlay")) closeModal(); };
+window.closeModal    = () => $("modalOverlay").classList.add("hidden");
+window.closeModalIfBg = e => { if (e.target === $("modalOverlay")) closeModal(); };
 
-window.addSubjectRow = (name="",score="") => {
+window.addSubjectRow = (name = "", score = "") => {
   const div = document.createElement("div");
   div.className = "subject-row";
   div.innerHTML = `
@@ -512,7 +515,7 @@ window.addSubjectRow = (name="",score="") => {
 
 window.editStudent = async id => {
   editingId = id;
-  const snap = await getDoc(doc(db,"students",id));
+  const snap = await getDoc(doc(db, "students", id));
   const d = snap.data();
   $("modalTitle").textContent = "編輯學生成績";
   $("fEmail").value    = d.email;
@@ -520,16 +523,16 @@ window.editStudent = async id => {
   $("fName").value     = d.name;
   $("fClass").value    = d.class;
   $("fSemester").value = d.semester;
-  $("fRank").value     = d.rank||"";
+  $("fRank").value     = d.rank || "";
   $("subjectRows").innerHTML = "";
-  (d.subjects||[]).forEach(s => addSubjectRow(s.name,s.score));
+  (d.subjects || []).forEach(s => addSubjectRow(s.name, s.score));
   $("modalOverlay").classList.remove("hidden");
 };
 
-window.deleteStudent = async (id,name) => {
+window.deleteStudent = async (id, name) => {
   if (!confirm(`確定要刪除「${name}」的所有成績嗎？`)) return;
-  await deleteDoc(doc(db,"students",id));
-  showToast(`已刪除 ${name}`,"ok");
+  await deleteDoc(doc(db, "students", id));
+  showToast(`已刪除 ${name}`, "ok");
   loadAdminList();
 };
 
@@ -539,57 +542,55 @@ window.saveStudent = async () => {
   const cls      = $("fClass").value.trim();
   const semester = $("fSemester").value.trim();
   const rank     = $("fRank").value.trim();
-  if (!email||!name) { showToast("請填寫 Email 和姓名","err"); return; }
+  if (!email || !name) { showToast("請填寫 Email 和姓名", "err"); return; }
 
   const subjects = [];
   $("subjectRows").querySelectorAll(".subject-row").forEach(row => {
-    const [i1,i2] = row.querySelectorAll("input");
+    const [i1, i2] = row.querySelectorAll("input");
     const n = i1.value.trim(), s = parseInt(i2.value);
-    if (n && !isNaN(s)) subjects.push({name:n,score:s});
+    if (n && !isNaN(s)) subjects.push({ name: n, score: s });
   });
 
-  const docId = editingId || email.replace(/[^a-z0-9]/g,"_");
-  await setDoc(doc(db,"students",docId),{email,name,class:cls,semester,rank,subjects});
-  showToast(`已儲存 ${name}`,"ok");
+  const docId = editingId || email.replace(/[^a-z0-9]/g, "_");
+  await setDoc(doc(db, "students", docId), { email, name, class: cls, semester, rank, subjects });
+  showToast(`已儲存 ${name}`, "ok");
   closeModal();
   loadAdminList();
 };
 
-
-/* ════════════════════════════════════════════
-   BATCH IMPORT
-════════════════════════════════════════════ */
+/* ════════════════════════════════════════
+   ADMIN — 批次匯入
+════════════════════════════════════════ */
 window.openImport = () => {
   $("importText").value = "";
   $("importPreview").innerHTML = "";
   $("importOverlay").classList.remove("hidden");
 };
-window.closeImport = () => $("importOverlay").classList.add("hidden");
-window.closeImportIfBg = e => { if(e.target===$("importOverlay")) closeImport(); };
+window.closeImport    = () => $("importOverlay").classList.add("hidden");
+window.closeImportIfBg = e => { if (e.target === $("importOverlay")) closeImport(); };
 
 window.runImport = async () => {
-  const lines = $("importText").value.trim().split("
-").filter(l=>l.trim());
-  if (!lines.length) { showToast("請貼上學生名單","err"); return; }
+  const raw = $("importText").value.trim();
+  const lines = raw.split("\n").filter(l => l.trim());
+  if (!lines.length) { showToast("請貼上學生名單", "err"); return; }
 
   const preview = $("importPreview");
   preview.innerHTML = "<div style='font-size:12px;color:var(--muted);font-family:monospace;margin-bottom:8px;'>匯入中...</div>";
 
-  let ok=0, fail=0, html="";
+  let ok = 0, fail = 0, html = "";
 
   for (const line of lines) {
-    // 支援空格或 tab 分隔，格式: 學號 姓名 班級 學期 @domain
     const parts = line.trim().split(/\s+/);
     if (parts.length < 5) {
-      html += `<div class="import-row"><span class="bad">✕</span> <span style="color:var(--muted)">${line} — 格式錯誤（需要5欄）</span></div>`;
+      html += `<div class="import-row"><span class="bad">✕</span> <span style="color:var(--muted)">${line} — 格式錯誤（需要5欄：學號 姓名 班級 學期 @domain）</span></div>`;
       fail++; continue;
     }
     const [stuId, name, cls, semester, domain] = parts;
-    const email = stuId + domain;
-    const docId = email.replace(/[^a-z0-9]/g,"_");
+    const email = (stuId + domain).toLowerCase();
+    const docId = email.replace(/[^a-z0-9]/g, "_");
     try {
-      await setDoc(doc(db,"students",docId), {
-        email: email.toLowerCase(), name, class: cls, semester, rank:"", subjects:[]
+      await setDoc(doc(db, "students", docId), {
+        email, name, class: cls, semester, rank: "", subjects: []
       });
       html += `<div class="import-row"><span class="ok">✓</span> ${name} — ${email}</div>`;
       ok++;
@@ -602,7 +603,7 @@ window.runImport = async () => {
   preview.innerHTML = `
     <div style="font-size:13px;margin-bottom:10px;">
       <span style="color:var(--pass)">✓ 成功 ${ok} 筆</span>
-      ${fail>0?`　<span style="color:var(--fail)">✕ 失敗 ${fail} 筆</span>`:""}
+      ${fail > 0 ? `　<span style="color:var(--fail)">✕ 失敗 ${fail} 筆</span>` : ""}
     </div>
     <div style="max-height:200px;overflow-y:auto;">${html}</div>
     <div style="margin-top:14px;text-align:right;">
@@ -611,11 +612,11 @@ window.runImport = async () => {
 };
 
 /* ── Toast ── */
-function showToast(msg,type="ok"){
-  const t=$("toast");
-  t.textContent=msg;
-  t.className=`toast ${type} show`;
-  setTimeout(()=>t.classList.remove("show"),2800);
+function showToast(msg, type = "ok") {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove("show"), 2800);
 }
 </script>
 </body>
