@@ -6,330 +6,480 @@
 <title>成績查詢系統</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0d0f14;
-    --surface: #161920;
-    --border: #252a35;
-    --accent: #e8c96d;
-    --accent2: #6d9ee8;
-    --text: #e8e4d9;
-    --muted: #6b7280;
-    --pass: #4ade80;
-    --fail: #f87171;
-    --card: #1c2030;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Noto Serif TC', serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    padding: 20px;
-    background-image:
-      radial-gradient(ellipse at 20% 20%, rgba(232,201,109,0.06) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 80%, rgba(109,158,232,0.06) 0%, transparent 50%);
-  }
+:root {
+  --bg:#0b0e15; --surface:#13171f; --card:#181d28; --border:#232a38; --border2:#2e3748;
+  --accent:#f0c040; --accent2:#4d9de0; --purple:#9b72f5;
+  --text:#e6e1d5; --muted:#5a6478; --pass:#3dd68c; --fail:#f26b6b; --warn:#f5a623;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Noto Serif TC',serif; background:var(--bg); color:var(--text);
+  min-height:100vh;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 10% 10%,rgba(240,192,64,.05) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 60% at 90% 90%,rgba(77,157,224,.05) 0%,transparent 60%);
+}
+.mono{font-family:'Space Mono',monospace;}
+.hidden{display:none!important;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+.fade-up{animation:fadeUp .4s ease both;}
 
-  /* ── Header ── */
-  .header { text-align: center; margin-bottom: 40px; }
-  .header .label {
-    font-size: 12px; letter-spacing: 6px; color: var(--muted);
-    font-family: 'Space Mono', monospace; margin-bottom: 12px;
-  }
-  .header h1 { font-size: 34px; font-weight: 700; letter-spacing: 3px; }
-  .header h1 span { color: var(--accent); }
-  .divider { width: 60px; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); margin: 14px auto 0; border-radius: 2px; }
+/* ── Shell ── */
+.shell{max-width:860px;margin:0 auto;padding:40px 20px 60px;display:flex;flex-direction:column;align-items:center;}
 
-  /* ── Login ── */
-  .login-card {
-    width: 100%; max-width: 400px;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; padding: 40px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-    animation: fadeUp .45s ease both;
-    text-align: center;
-  }
-  .login-desc { color: var(--muted); font-size: 14px; line-height: 1.8; margin-bottom: 28px; }
-  .btn-google {
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-    width: 100%; padding: 14px;
-    background: #fff; border: none; border-radius: 8px;
-    color: #3c4043; font-size: 15px; font-weight: 600;
-    cursor: pointer; transition: box-shadow .2s, transform .1s;
-    font-family: 'Noto Serif TC', serif;
-  }
-  .btn-google:hover { box-shadow: 0 4px 20px rgba(255,255,255,.15); transform: translateY(-1px); }
-  .btn-google:active { transform: translateY(0); }
-  .btn-google svg { width: 20px; height: 20px; flex-shrink: 0; }
-  .error-msg { color: var(--fail); font-size: 13px; font-family: 'Space Mono', monospace; margin-top: 14px; display: none; }
+/* ── Site Header ── */
+.site-header{text-align:center;margin-bottom:44px;}
+.site-header .eyebrow{font-size:11px;letter-spacing:6px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:14px;}
+.site-header h1{font-size:36px;font-weight:700;letter-spacing:3px;}
+.site-header h1 em{font-style:normal;color:var(--accent);}
+.ruler{width:56px;height:2px;margin:14px auto 0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;}
 
-  /* ── Loading ── */
-  .loading { text-align: center; }
-  .spinner {
-    width: 36px; height: 36px;
-    border: 3px solid var(--border); border-top-color: var(--accent);
-    border-radius: 50%; animation: spin .8s linear infinite;
-    margin: 0 auto 16px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading p { color: var(--muted); font-family: 'Space Mono', monospace; font-size: 13px; letter-spacing: 2px; }
+/* ── Screens ── */
+.screen{width:100%;display:flex;flex-direction:column;align-items:center;}
 
-  /* ── No Record ── */
-  .no-record { text-align: center; max-width: 400px; }
-  .no-record .icon { font-size: 48px; margin-bottom: 16px; }
-  .no-record h3 { font-size: 18px; margin-bottom: 8px; }
-  .no-record p { color: var(--muted); font-size: 14px; line-height: 1.8; margin-bottom: 24px; }
-  .user-email { font-family: 'Space Mono', monospace; color: var(--accent); font-size: 13px; }
+/* ── Login ── */
+.login-card{
+  width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border);
+  border-radius:18px;padding:40px;box-shadow:0 24px 64px rgba(0,0,0,.45);
+}
+.login-card p{color:var(--muted);font-size:14px;line-height:1.9;text-align:center;margin-bottom:28px;}
+.btn-google{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  width:100%;padding:14px 20px;background:#fff;border:none;border-radius:10px;
+  color:#3c4043;font-size:15px;font-weight:600;cursor:pointer;
+  transition:box-shadow .2s,transform .1s;font-family:'Noto Serif TC',serif;
+}
+.btn-google:hover{box-shadow:0 6px 24px rgba(255,255,255,.18);transform:translateY(-1px);}
+.btn-google svg{width:20px;height:20px;flex-shrink:0;}
+.err-msg{color:var(--fail);font-size:12px;font-family:'Space Mono',monospace;margin-top:14px;text-align:center;}
 
-  /* ── Dashboard ── */
-  .dashboard { width: 100%; max-width: 820px; animation: fadeUp .45s ease both; }
-  .dash-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
-  .student-info h2 { font-size: 24px; font-weight: 700; }
-  .student-info .meta { font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; margin-top: 5px; letter-spacing: 1px; }
-  .user-avatar { width: 32px; height: 32px; border-radius: 50%; vertical-align: middle; margin-right: 8px; }
+/* ── Spinner ── */
+.spinner-wrap{text-align:center;padding:40px;}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px;}
+.spinner-wrap p{color:var(--muted);font-size:12px;letter-spacing:2px;font-family:'Space Mono',monospace;}
 
-  .btn-logout {
-    padding: 8px 20px; background: transparent;
-    border: 1px solid var(--border); border-radius: 6px;
-    color: var(--muted); font-size: 13px;
-    font-family: 'Space Mono', monospace;
-    cursor: pointer; transition: border-color .2s, color .2s;
-  }
-  .btn-logout:hover { border-color: var(--fail); color: var(--fail); }
+/* ── No Record ── */
+.no-record{text-align:center;max-width:380px;}
+.no-record .icon{font-size:52px;margin-bottom:18px;}
+.no-record h3{font-size:18px;margin-bottom:10px;}
+.no-record p{color:var(--muted);font-size:14px;line-height:1.9;margin-bottom:24px;}
+.chip{display:inline-block;padding:3px 12px;border-radius:20px;background:rgba(240,192,64,.12);color:var(--accent);font-size:12px;font-family:'Space Mono',monospace;}
 
-  /* ── Summary ── */
-  .summary-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
-  .summary-card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 12px; padding: 20px; text-align: center; position: relative; overflow: hidden;
-  }
-  .summary-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-  .summary-card.total::before { background: linear-gradient(90deg, var(--accent), #d4a843); }
-  .summary-card.avg::before   { background: linear-gradient(90deg, var(--accent2), #5a8fd4); }
-  .summary-card.rank::before  { background: linear-gradient(90deg, #a78bfa, #7c63d4); }
-  .summary-card .lbl { font-size: 11px; letter-spacing: 3px; color: var(--muted); font-family: 'Space Mono', monospace; margin-bottom: 8px; }
-  .summary-card .val { font-size: 30px; font-weight: 700; }
-  .summary-card.total .val { color: var(--accent); }
-  .summary-card.avg .val   { color: var(--accent2); }
-  .summary-card.rank .val  { color: #a78bfa; }
-  .summary-card .sub { font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; margin-top: 4px; }
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:8px;font-size:13px;cursor:pointer;transition:all .18s;border:none;font-family:'Noto Serif TC',serif;letter-spacing:1px;}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn-ghost:hover{border-color:var(--fail);color:var(--fail);}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#d9a82e);color:#0b0e15;font-weight:700;}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px);}
+.btn-secondary{background:var(--card);border:1px solid var(--border2);color:var(--text);}
+.btn-secondary:hover{border-color:var(--accent2);color:var(--accent2);}
+.btn-danger{background:rgba(242,107,107,.1);border:1px solid rgba(242,107,107,.25);color:var(--fail);}
+.btn-danger:hover{background:rgba(242,107,107,.2);}
+.btn-sm{padding:6px 14px;font-size:12px;}
 
-  /* ── Table ── */
-  .grades-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-  .grades-title { padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: 12px; letter-spacing: 3px; color: var(--muted); font-family: 'Space Mono', monospace; }
-  table { width: 100%; border-collapse: collapse; }
-  thead th { padding: 11px 24px; text-align: left; font-size: 11px; letter-spacing: 3px; color: var(--muted); font-family: 'Space Mono', monospace; background: rgba(255,255,255,.02); font-weight: 400; }
-  tbody tr { border-top: 1px solid var(--border); transition: background .15s; }
-  tbody tr:hover { background: rgba(255,255,255,.03); }
-  tbody td { padding: 15px 24px; font-size: 15px; }
-  .score-row { display: flex; align-items: center; gap: 10px; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 16px; }
-  .bar-bg { width: 80px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
-  .bar { height: 100%; border-radius: 2px; transition: width 1s ease; }
-  .pass .bar { background: var(--pass); }
-  .fail .bar { background: var(--fail); }
-  .mid  .bar { background: var(--accent); }
-  .tag { font-size: 11px; font-family: 'Space Mono', monospace; padding: 2px 8px; border-radius: 4px; letter-spacing: 1px; }
-  .tag.ok { background: rgba(74,222,128,.12); color: var(--pass); }
-  .tag.no { background: rgba(248,113,113,.12); color: var(--fail); }
+/* ── Student Dashboard ── */
+.dash-header{display:flex;justify-content:space-between;align-items:flex-start;width:100%;margin-bottom:28px;flex-wrap:wrap;gap:16px;}
+.stu-info h2{font-size:22px;font-weight:700;display:flex;align-items:center;gap:10px;}
+.stu-info h2 img{width:32px;height:32px;border-radius:50%;border:2px solid var(--border2);}
+.stu-info .meta{font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:5px;letter-spacing:.5px;}
 
-  footer { margin-top: 36px; font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; letter-spacing: 2px; text-align: center; }
+/* Summary */
+.summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:100%;margin-bottom:24px;}
+.sum-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;position:relative;overflow:hidden;}
+.sum-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.sum-card.c1::before{background:linear-gradient(90deg,var(--accent),#d9a82e);}
+.sum-card.c2::before{background:linear-gradient(90deg,var(--accent2),#3480c0);}
+.sum-card.c3::before{background:linear-gradient(90deg,var(--purple),#7b4fd4);}
+.sum-card .lbl{font-size:10px;letter-spacing:4px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:8px;}
+.sum-card .val{font-size:30px;font-weight:700;}
+.sum-card.c1 .val{color:var(--accent);}
+.sum-card.c2 .val{color:var(--accent2);}
+.sum-card.c3 .val{color:var(--purple);}
+.sum-card .sub{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:4px;}
 
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-  @media (max-width: 580px) {
-    .summary-row { grid-template-columns: 1fr; }
-    .header h1 { font-size: 26px; }
-    .bar-bg { display: none; }
-    thead th:last-child, tbody td:last-child { display: none; }
-  }
+/* Grades table */
+.table-card{width:100%;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.table-title{padding:16px 24px;border-bottom:1px solid var(--border);font-size:11px;letter-spacing:4px;color:var(--muted);font-family:'Space Mono',monospace;}
+table{width:100%;border-collapse:collapse;}
+thead th{padding:11px 24px;text-align:left;font-size:10px;letter-spacing:3px;color:var(--muted);font-family:'Space Mono',monospace;background:rgba(255,255,255,.018);font-weight:400;}
+tbody tr{border-top:1px solid var(--border);transition:background .15s;}
+tbody tr:hover{background:rgba(255,255,255,.025);}
+tbody td{padding:15px 24px;font-size:14px;}
+.score-wrap{display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-weight:700;}
+.bar-bg{width:72px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.bar{height:100%;border-radius:2px;transition:width 1s ease;}
+.s-pass .bar{background:var(--pass);}
+.s-fail .bar{background:var(--fail);}
+.s-mid  .bar{background:var(--warn);}
+.tag{font-size:10px;font-family:'Space Mono',monospace;padding:3px 9px;border-radius:4px;letter-spacing:1px;}
+.tag-ok{background:rgba(61,214,140,.12);color:var(--pass);}
+.tag-no{background:rgba(242,107,107,.12);color:var(--fail);}
+
+/* ── Admin Panel ── */
+.admin-bar{width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:12px;}
+.admin-bar h2{font-size:20px;font-weight:700;display:flex;align-items:center;gap:10px;}
+.admin-bar h2 img{width:28px;height:28px;border-radius:50%;}
+.admin-badge{font-size:10px;letter-spacing:2px;padding:3px 10px;border-radius:4px;background:rgba(155,114,245,.15);color:var(--purple);font-family:'Space Mono',monospace;}
+.admin-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.stu-list{width:100%;display:flex;flex-direction:column;gap:12px;}
+.stu-row{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;transition:border-color .18s;}
+.stu-row:hover{border-color:var(--border2);}
+.stu-row-info h4{font-size:15px;font-weight:600;margin-bottom:3px;}
+.stu-row-info .sub{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;letter-spacing:.5px;}
+.stu-row-actions{display:flex;gap:8px;}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;backdrop-filter:blur(4px);}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:36px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.6);animation:fadeUp .3s ease both;}
+.modal h3{font-size:18px;font-weight:700;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-full{grid-column:1/-1;}
+.form-group label{display:block;font-size:11px;letter-spacing:3px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:7px;}
+.form-group input{width:100%;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Space Mono',monospace;outline:none;transition:border-color .18s,box-shadow .18s;}
+.form-group input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(240,192,64,.1);}
+.form-group input:disabled{opacity:.45;cursor:not-allowed;}
+.subjects-label{font-size:11px;letter-spacing:3px;color:var(--muted);font-family:'Space Mono',monospace;display:block;margin:20px 0 10px;}
+.subject-row{display:grid;grid-template-columns:1fr 90px 32px;gap:8px;margin-bottom:8px;align-items:center;}
+.subject-row input{padding:9px 12px;}
+.btn-del-sub{width:32px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(242,107,107,.1);border:1px solid rgba(242,107,107,.2);border-radius:6px;color:var(--fail);cursor:pointer;font-size:16px;transition:background .15s;}
+.btn-del-sub:hover{background:rgba(242,107,107,.22);}
+.btn-add-sub{display:flex;align-items:center;gap:6px;background:rgba(77,157,224,.1);border:1px solid rgba(77,157,224,.2);border-radius:6px;color:var(--accent2);padding:7px 14px;font-size:12px;cursor:pointer;font-family:'Space Mono',monospace;transition:background .15s;margin-top:4px;}
+.btn-add-sub:hover{background:rgba(77,157,224,.2);}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+
+/* ── Empty ── */
+.empty{text-align:center;padding:48px 24px;color:var(--muted);font-size:13px;font-family:'Space Mono',monospace;letter-spacing:1px;}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:12px 22px;font-size:13px;font-family:'Space Mono',monospace;box-shadow:0 8px 32px rgba(0,0,0,.4);opacity:0;transition:all .3s;pointer-events:none;z-index:200;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.ok{border-color:rgba(61,214,140,.4);color:var(--pass);}
+.toast.err{border-color:rgba(242,107,107,.4);color:var(--fail);}
+
+footer{margin-top:48px;font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;letter-spacing:2px;text-align:center;}
+
+@media(max-width:580px){
+  .summary-row{grid-template-columns:1fr;}
+  .site-header h1{font-size:26px;}
+  .bar-bg{display:none;}
+  .form-grid{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
+<div class="shell">
 
-<div class="header">
-  <div class="label">學生服務入口</div>
-  <h1>成績<span>查詢</span>系統</h1>
-  <div class="divider"></div>
+<div class="site-header">
+  <div class="eyebrow">學生服務入口</div>
+  <h1>成績<em>查詢</em>系統</h1>
+  <div class="ruler"></div>
 </div>
 
-<!-- 畫面切換容器 -->
-<div id="screen-login">
+<!-- ══ Login ══ -->
+<div id="s-login" class="screen fade-up">
   <div class="login-card">
-    <p class="login-desc">請使用你的 Google 帳號登入<br>系統將自動比對你的成績資料</p>
-    <button class="btn-google" onclick="signInWithGoogle()">
-      <!-- Google G Logo SVG -->
-      <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+    <p>請使用你的 Google 帳號登入<br>系統將自動比對你的成績資料</p>
+    <button class="btn-google" onclick="doSignIn()">
+      <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
       使用 Google 帳號登入
     </button>
-    <div class="error-msg" id="errMsg"></div>
+    <div class="err-msg hidden" id="loginErr"></div>
   </div>
 </div>
 
-<div id="screen-loading" style="display:none">
-  <div class="loading">
-    <div class="spinner"></div>
-    <p>正在讀取成績資料⋯</p>
-  </div>
+<!-- ══ Loading ══ -->
+<div id="s-loading" class="screen hidden">
+  <div class="spinner-wrap"><div class="spinner"></div><p>正在讀取資料⋯</p></div>
 </div>
 
-<div id="screen-norecord" style="display:none">
+<!-- ══ No Record ══ -->
+<div id="s-norecord" class="screen hidden fade-up">
   <div class="no-record">
     <div class="icon">🔍</div>
     <h3>查無成績資料</h3>
-    <p>系統中找不到與<br><span class="user-email" id="noRecordEmail"></span><br>對應的成績，請聯絡教務處。</p>
-    <button class="btn-logout" onclick="signOut()">登　出</button>
+    <p>系統中找不到與<br><span class="chip" id="noRecEmail"></span><br>對應的成績記錄，請聯絡教務處。</p>
+    <button class="btn btn-ghost" onclick="doSignOut()">登　出</button>
   </div>
 </div>
 
-<div id="screen-dashboard" style="display:none">
-  <div class="dashboard">
-    <div class="dash-header">
-      <div class="student-info">
-        <h2><img id="avatarImg" class="user-avatar" src="" alt=""><span id="stuName">—</span></h2>
-        <div class="meta" id="stuMeta">—</div>
+<!-- ══ Student Dashboard ══ -->
+<div id="s-student" class="screen hidden fade-up" style="width:100%">
+  <div class="dash-header">
+    <div class="stu-info">
+      <h2><img id="stuAvatar" src="" alt=""><span id="stuName">—</span></h2>
+      <div class="meta" id="stuMeta">—</div>
+    </div>
+    <button class="btn btn-ghost" onclick="doSignOut()">登　出</button>
+  </div>
+  <div class="summary-row">
+    <div class="sum-card c1"><div class="lbl">TOTAL</div><div class="val" id="sumTotal">—</div><div class="sub">總　分</div></div>
+    <div class="sum-card c2"><div class="lbl">AVERAGE</div><div class="val" id="sumAvg">—</div><div class="sub">平均分數</div></div>
+    <div class="sum-card c3"><div class="lbl">RANK</div><div class="val" id="sumRank">—</div><div class="sub">班級排名</div></div>
+  </div>
+  <div class="table-card">
+    <div class="table-title">SUBJECT GRADES ／ 各科成績</div>
+    <table><thead><tr><th>科　目</th><th>成　績</th><th>狀　態</th></tr></thead>
+      <tbody id="stuGradeBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ Admin Panel ══ -->
+<div id="s-admin" class="screen hidden fade-up" style="width:100%">
+  <div class="admin-bar">
+    <h2><img id="adminAvatar" src="" alt=""><span>成績管理</span><span class="admin-badge">ADMIN</span></h2>
+    <div class="admin-actions">
+      <button class="btn btn-primary" onclick="openModal()">＋ 新增學生</button>
+      <button class="btn btn-ghost" onclick="doSignOut()">登　出</button>
+    </div>
+  </div>
+  <div class="stu-list" id="adminList"><div class="empty">載入中⋯</div></div>
+</div>
+
+</div><!-- /shell -->
+
+<!-- ══ Modal ══ -->
+<div class="modal-overlay hidden" id="modalOverlay" onclick="closeModalIfBg(event)">
+  <div class="modal">
+    <h3 id="modalTitle">新增學生成績</h3>
+    <div class="form-grid">
+      <div class="form-group form-full">
+        <label>學生 EMAIL（Google 帳號）</label>
+        <input type="email" id="fEmail" placeholder="student@gmail.com">
       </div>
-      <button class="btn-logout" onclick="signOut()">登　出</button>
+      <div class="form-group">
+        <label>姓　名</label>
+        <input type="text" id="fName" placeholder="王小明">
+      </div>
+      <div class="form-group">
+        <label>班　級</label>
+        <input type="text" id="fClass" placeholder="資工二甲">
+      </div>
+      <div class="form-group">
+        <label>學　期</label>
+        <input type="text" id="fSemester" placeholder="113-1">
+      </div>
+      <div class="form-group">
+        <label>班級排名</label>
+        <input type="text" id="fRank" placeholder="3 / 42">
+      </div>
     </div>
-    <div class="summary-row">
-      <div class="summary-card total"><div class="lbl">TOTAL</div><div class="val" id="totalScore">—</div><div class="sub">總　分</div></div>
-      <div class="summary-card avg">  <div class="lbl">AVERAGE</div><div class="val" id="avgScore">—</div><div class="sub">平均分數</div></div>
-      <div class="summary-card rank"> <div class="lbl">RANK</div><div class="val" id="rankScore">—</div><div class="sub">班級排名</div></div>
-    </div>
-    <div class="grades-card">
-      <div class="grades-title">SUBJECT GRADES ／ 各科成績</div>
-      <table>
-        <thead><tr><th>科　目</th><th>成　績</th><th>狀　態</th></tr></thead>
-        <tbody id="gradesBody"></tbody>
-      </table>
+    <span class="subjects-label">各科成績</span>
+    <div id="subjectRows"></div>
+    <button class="btn-add-sub" onclick="addSubjectRow()">＋ 新增科目</button>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">取　消</button>
+      <button class="btn btn-primary" onclick="saveStudent()">儲　存</button>
     </div>
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
 <footer>© 2025 成績查詢系統　｜　如有疑問請洽教務處</footer>
 
-<!-- Firebase SDK -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, onAuthStateChanged }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { initializeApp }
+  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import { getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc, query, where }
+  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-// ╔══════════════════════════════════════════════════════╗
-// ║  ① 填入你的 Firebase 設定（從 Firebase Console 複製）║
-// ╚══════════════════════════════════════════════════════╝
-const firebaseConfig = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT.firebaseapp.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId:             "YOUR_APP_ID"
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyC0AF7-_ZzkeiInZRacvEtxSG8vVBloRFM",
+  authDomain:        "gradelookup-bf204.firebaseapp.com",
+  projectId:         "gradelookup-bf204",
+  storageBucket:     "gradelookup-bf204.firebasestorage.app",
+  messagingSenderId: "170384586457",
+  appId:             "1:170384586457:web:ffe28a5f79156b6ee570c8"
 };
 
-// ╔══════════════════════════════════════════════════════╗
-// ║  ② 填入你的 Google Sheets 公開 CSV 網址              ║
-// ║  格式: email,姓名,班級,學期,排名,科目1,分數1,...     ║
-// ╚══════════════════════════════════════════════════════╝
-const SHEET_CSV_URL = "YOUR_GOOGLE_SHEET_CSV_URL";
+/* ★ 把這裡改成你自己的 Google email，登入後就會看到管理介面 */
+const ADMIN_EMAILS = [
+  "teacher@gmail.com"    // ← 改成你的 email！
+];
 
-const app  = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+const app      = initializeApp(FIREBASE_CONFIG);
+const auth     = getAuth(app);
+const db       = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// 畫面切換
-function show(id) {
-  ["login","loading","norecord","dashboard"].forEach(s =>
-    document.getElementById("screen-"+s).style.display = s===id ? "block" : "none"
-  );
-}
-
-// Google 登入
-window.signInWithGoogle = async () => {
-  try {
-    await signInWithPopup(auth, provider);
-  } catch(e) {
-    const el = document.getElementById("errMsg");
-    el.textContent = "⚠ 登入失敗：" + e.message;
-    el.style.display = "block";
-  }
+const $    = id => document.getElementById(id);
+const show = id => {
+  ["s-login","s-loading","s-norecord","s-student","s-admin"]
+    .forEach(s => $(s).classList.toggle("hidden", s !== id));
 };
 
-// 登出
-window.signOut = () => fbSignOut(auth);
+/* ── Sign in / out ── */
+window.doSignIn = async () => {
+  try { await signInWithPopup(auth, provider); }
+  catch(e) {
+    const el = $("loginErr");
+    el.textContent = "⚠ 登入失敗：" + e.message;
+    el.classList.remove("hidden");
+  }
+};
+window.doSignOut = () => fbOut(auth);
 
-// 監聽登入狀態
+/* ── Auth state ── */
 onAuthStateChanged(auth, async user => {
-  if (!user) { show("login"); return; }
-  show("loading");
-  try {
-    await loadGrades(user);
-  } catch(e) {
-    show("norecord");
-    document.getElementById("noRecordEmail").textContent = user.email;
+  if (!user) { show("s-login"); return; }
+  show("s-loading");
+  if (ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(user.email.toLowerCase())) {
+    $("adminAvatar").src = user.photoURL || "";
+    await loadAdminList();
+    show("s-admin");
+  } else {
+    await loadStudentGrades(user);
   }
 });
 
-// 從 Google Sheets CSV 讀取成績
-async function loadGrades(user) {
-  const res  = await fetch(SHEET_CSV_URL);
-  const text = await res.text();
-  const rows = text.trim().split("\n").map(r => r.split(",").map(c => c.trim()));
-
-  // 跳過標題列，找到與 email 相符的那行
-  const dataRows = rows.slice(1);
-  const row = dataRows.find(r => r[0].toLowerCase() === user.email.toLowerCase());
-
-  if (!row) {
-    show("norecord");
-    document.getElementById("noRecordEmail").textContent = user.email;
-    return;
+/* ════════════════════════════════════════════
+   STUDENT
+════════════════════════════════════════════ */
+async function loadStudentGrades(user) {
+  const q    = query(collection(db,"students"), where("email","==",user.email.toLowerCase()));
+  const snap = await getDocs(q);
+  if (snap.empty) {
+    $("noRecEmail").textContent = user.email;
+    show("s-norecord"); return;
   }
+  const d = snap.docs[0].data();
+  $("stuAvatar").src       = user.photoURL || "";
+  $("stuName").textContent = d.name;
+  $("stuMeta").textContent = `${user.email}　｜　${d.class}　｜　${d.semester}`;
 
-  // 欄位：email(0), 姓名(1), 班級(2), 學期(3), 排名(4),
-  //        科目A(5), 分數A(6), 科目B(7), 分數B(8) ...
-  const name     = row[1];
-  const cls      = row[2];
-  const semester = row[3];
-  const rank     = row[4];
+  const scores = (d.subjects||[]).map(s=>s.score);
+  const total  = scores.reduce((a,b)=>a+b,0);
+  $("sumTotal").textContent = total;
+  $("sumAvg").textContent   = scores.length ? (total/scores.length).toFixed(1) : "—";
+  $("sumRank").textContent  = d.rank || "—";
 
-  const subjects = [];
-  for (let i = 5; i+1 < row.length; i += 2) {
-    if (row[i]) subjects.push({ name: row[i], score: parseInt(row[i+1]) || 0 });
-  }
-
-  // 填入畫面
-  document.getElementById("avatarImg").src = user.photoURL || "";
-  document.getElementById("stuName").textContent = name;
-  document.getElementById("stuMeta").textContent =
-    `${user.email}　｜　${cls}　｜　${semester}`;
-
-  const scores = subjects.map(s => s.score);
-  const total  = scores.reduce((a,b) => a+b, 0);
-  const avg    = (total / scores.length).toFixed(1);
-  document.getElementById("totalScore").textContent = total;
-  document.getElementById("avgScore").textContent   = avg;
-  document.getElementById("rankScore").textContent  = rank;
-
-  const tbody = document.getElementById("gradesBody");
+  const tbody = $("stuGradeBody");
   tbody.innerHTML = "";
-  subjects.forEach(sub => {
-    const cls2 = sub.score >= 80 ? "pass" : sub.score >= 60 ? "mid" : "fail";
-    const tag  = sub.score >= 60 ? '<span class="tag ok">及格</span>' : '<span class="tag no">不及格</span>';
-    tbody.insertAdjacentHTML("beforeend", `
+  (d.subjects||[]).forEach(sub => {
+    const c   = sub.score>=80?"s-pass":sub.score>=60?"s-mid":"s-fail";
+    const tag = sub.score>=60?'<span class="tag tag-ok">及格</span>':'<span class="tag tag-no">不及格</span>';
+    tbody.insertAdjacentHTML("beforeend",`
       <tr>
         <td>${sub.name}</td>
-        <td><div class="score-row ${cls2}">
+        <td><div class="score-wrap ${c}">
           <span>${sub.score}</span>
-          <div class="bar-bg"><div class="bar" style="width:0%" data-w="${sub.score}%"></div></div>
+          <div class="bar-bg"><div class="bar" style="width:0" data-w="${sub.score}%"></div></div>
         </div></td>
         <td>${tag}</td>
       </tr>`);
   });
-  setTimeout(() => {
-    document.querySelectorAll(".bar").forEach(b => b.style.width = b.dataset.w);
-  }, 100);
+  setTimeout(()=>document.querySelectorAll(".bar").forEach(b=>b.style.width=b.dataset.w),120);
+  show("s-student");
+}
 
-  show("dashboard");
+/* ════════════════════════════════════════════
+   ADMIN
+════════════════════════════════════════════ */
+async function loadAdminList() {
+  const snap = await getDocs(collection(db,"students"));
+  const list = $("adminList");
+  list.innerHTML = "";
+  if (snap.empty) {
+    list.innerHTML = '<div class="empty">尚無學生資料，點「新增學生」開始建立</div>';
+    return;
+  }
+  snap.forEach(ds => {
+    const d = ds.data();
+    const scores = (d.subjects||[]).map(s=>s.score);
+    const avg = scores.length?(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1):"—";
+    list.insertAdjacentHTML("beforeend",`
+      <div class="stu-row">
+        <div class="stu-row-info">
+          <h4>${d.name} <span style="font-size:12px;color:var(--muted);font-weight:400">${d.class} ／ ${d.semester}</span></h4>
+          <div class="sub">${d.email}　｜　平均 ${avg}　｜　排名 ${d.rank||"—"}</div>
+        </div>
+        <div class="stu-row-actions">
+          <button class="btn btn-secondary btn-sm" onclick="editStudent('${ds.id}')">編輯</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteStudent('${ds.id}','${d.name}')">刪除</button>
+        </div>
+      </div>`);
+  });
+}
+
+/* ── Modal ── */
+let editingId = null;
+
+window.openModal = () => {
+  editingId = null;
+  $("modalTitle").textContent = "新增學生成績";
+  ["fEmail","fName","fClass","fSemester","fRank"].forEach(id => $(id).value="");
+  $("fEmail").disabled = false;
+  $("subjectRows").innerHTML = "";
+  addSubjectRow(); addSubjectRow(); addSubjectRow();
+  $("modalOverlay").classList.remove("hidden");
+};
+window.closeModal = () => $("modalOverlay").classList.add("hidden");
+window.closeModalIfBg = e => { if(e.target===$("modalOverlay")) closeModal(); };
+
+window.addSubjectRow = (name="",score="") => {
+  const div = document.createElement("div");
+  div.className = "subject-row";
+  div.innerHTML = `
+    <input type="text"   placeholder="科目名稱" value="${name}">
+    <input type="number" placeholder="分數" min="0" max="100" value="${score}">
+    <button class="btn-del-sub" onclick="this.parentElement.remove()">✕</button>`;
+  $("subjectRows").appendChild(div);
+};
+
+window.editStudent = async id => {
+  editingId = id;
+  const snap = await getDoc(doc(db,"students",id));
+  const d = snap.data();
+  $("modalTitle").textContent = "編輯學生成績";
+  $("fEmail").value    = d.email;
+  $("fEmail").disabled = true;
+  $("fName").value     = d.name;
+  $("fClass").value    = d.class;
+  $("fSemester").value = d.semester;
+  $("fRank").value     = d.rank||"";
+  $("subjectRows").innerHTML = "";
+  (d.subjects||[]).forEach(s => addSubjectRow(s.name,s.score));
+  $("modalOverlay").classList.remove("hidden");
+};
+
+window.deleteStudent = async (id,name) => {
+  if (!confirm(`確定要刪除「${name}」的所有成績嗎？`)) return;
+  await deleteDoc(doc(db,"students",id));
+  showToast(`已刪除 ${name}`,"ok");
+  loadAdminList();
+};
+
+window.saveStudent = async () => {
+  const email    = $("fEmail").value.trim().toLowerCase();
+  const name     = $("fName").value.trim();
+  const cls      = $("fClass").value.trim();
+  const semester = $("fSemester").value.trim();
+  const rank     = $("fRank").value.trim();
+  if (!email||!name) { showToast("請填寫 Email 和姓名","err"); return; }
+
+  const subjects = [];
+  $("subjectRows").querySelectorAll(".subject-row").forEach(row => {
+    const [i1,i2] = row.querySelectorAll("input");
+    const n = i1.value.trim(), s = parseInt(i2.value);
+    if (n && !isNaN(s)) subjects.push({name:n,score:s});
+  });
+
+  const docId = editingId || email.replace(/[^a-z0-9]/g,"_");
+  await setDoc(doc(db,"students",docId),{email,name,class:cls,semester,rank,subjects});
+  showToast(`已儲存 ${name}`,"ok");
+  closeModal();
+  loadAdminList();
+};
+
+/* ── Toast ── */
+function showToast(msg,type="ok"){
+  const t=$("toast");
+  t.textContent=msg;
+  t.className=`toast ${type} show`;
+  setTimeout(()=>t.classList.remove("show"),2800);
 }
 </script>
 </body>
