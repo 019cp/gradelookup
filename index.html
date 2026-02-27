@@ -425,15 +425,12 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
-function showS(s){
-  ["login","bind","student","admin"].forEach(n => $(s==="login"?`S-login`:s==="bind"?`S-bind`:s==="student"?`S-student`:`S-admin`).classList.add("hidden"));
-  $(`S-${s}`).classList.remove("hidden");
-}
-// Simplified version:
 function showScreen(s){
-  document.querySelectorAll("[id^='S-']").forEach(el=>el.classList.add("hidden"));
-  $(`S-${s}`).classList.remove("hidden");
+  ["S-login","S-bind","S-student","S-admin"].forEach(id=>$(id).classList.add("hidden"));
+  $("S-"+s).classList.remove("hidden");
 }
+// alias
+const showS = showScreen;
 
 /* ══════════════════ CLASSES ══════════════════ */
 async function loadClasses(){
