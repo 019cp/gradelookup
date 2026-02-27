@@ -3,621 +3,799 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>成績查詢系統</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<title>成績管理系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg:#0b0e15; --surface:#13171f; --card:#181d28; --border:#232a38; --border2:#2e3748;
-  --accent:#f0c040; --accent2:#4d9de0; --purple:#9b72f5;
-  --text:#e6e1d5; --muted:#5a6478; --pass:#3dd68c; --fail:#f26b6b; --warn:#f5a623;
+:root{
+  --bg:#0f1117;--s1:#161b27;--s2:#1c2334;--s3:#222c3f;
+  --b1:#2a3549;--b2:#334060;--b3:#3d4e74;
+  --acc:#3b82f6;--acc2:#06b6d4;--grn:#22c55e;--red:#ef4444;--ylw:#f59e0b;--pur:#a855f7;
+  --t1:#f0f4ff;--t2:#94a3b8;--t3:#4b5a74;
+  --r:10px;--rs:6px;--shadow:0 4px 24px rgba(0,0,0,.4);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{
-  font-family:'Noto Serif TC',serif; background:var(--bg); color:var(--text);
-  min-height:100vh;
-  background-image:
-    radial-gradient(ellipse 60% 40% at 10% 10%,rgba(240,192,64,.05) 0%,transparent 60%),
-    radial-gradient(ellipse 50% 60% at 90% 90%,rgba(77,157,224,.05) 0%,transparent 60%);
-}
-.mono{font-family:'Space Mono',monospace;}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;font-size:14px;}
+.mono{font-family:'JetBrains Mono',monospace;}
 .hidden{display:none!important;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 @keyframes spin{to{transform:rotate(360deg);}}
-.fade-up{animation:fadeUp .4s ease both;}
+.fade-up{animation:fadeUp .35s ease both;}
 
-/* ── Shell ── */
-.shell{max-width:860px;margin:0 auto;padding:40px 20px 60px;display:flex;flex-direction:column;align-items:center;}
+/* NAV */
+.topnav{position:fixed;top:0;left:0;right:0;height:56px;z-index:50;background:rgba(15,17,23,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--b1);display:flex;align-items:center;padding:0 24px;gap:16px;}
+.topnav .logo{font-size:15px;font-weight:700;letter-spacing:1px;}
+.topnav .logo em{font-style:normal;color:var(--acc);}
+.topnav-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.user-pill{display:flex;align-items:center;gap:8px;padding:5px 12px;background:var(--s2);border:1px solid var(--b1);border-radius:20px;}
+.user-pill img{width:24px;height:24px;border-radius:50%;}
+.user-pill span{font-size:13px;color:var(--t2);}
 
-/* ── Site Header ── */
-.site-header{text-align:center;margin-bottom:44px;}
-.site-header .eyebrow{font-size:11px;letter-spacing:6px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:14px;}
-.site-header h1{font-size:36px;font-weight:700;letter-spacing:3px;}
-.site-header h1 em{font-style:normal;color:var(--accent);}
-.ruler{width:56px;height:2px;margin:14px auto 0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;}
+/* SIDEBAR */
+.layout{display:flex;padding-top:56px;min-height:100vh;}
+.sidebar{width:220px;flex-shrink:0;background:var(--s1);border-right:1px solid var(--b1);padding:20px 12px;position:fixed;top:56px;bottom:0;overflow-y:auto;}
+.sidebar-label{font-size:10px;letter-spacing:3px;color:var(--t3);padding:10px 12px 4px;font-family:'JetBrains Mono',monospace;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--rs);color:var(--t2);cursor:pointer;transition:all .15s;font-size:13px;font-weight:500;border:1px solid transparent;margin-bottom:2px;}
+.nav-item:hover{background:var(--s2);color:var(--t1);}
+.nav-item.active{background:rgba(59,130,246,.12);color:var(--acc);border-color:rgba(59,130,246,.25);}
+.nav-item .ico{font-size:15px;width:20px;text-align:center;}
+.main{margin-left:220px;padding:28px;flex:1;}
+.page{display:none;}
+.page.active{display:block;animation:fadeUp .3s ease;}
 
-/* ── Screens ── */
-.screen{width:100%;display:flex;flex-direction:column;align-items:center;}
+/* PAGE HEADER */
+.ph{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.ph-left h2{font-size:20px;font-weight:700;}
+.ph-left p{color:var(--t2);font-size:13px;margin-top:3px;}
 
-/* ── Login ── */
-.login-card{
-  width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border);
-  border-radius:18px;padding:40px;box-shadow:0 24px 64px rgba(0,0,0,.45);
-}
-.login-card p{color:var(--muted);font-size:14px;line-height:1.9;text-align:center;margin-bottom:28px;}
-.btn-google{
-  display:flex;align-items:center;justify-content:center;gap:12px;
-  width:100%;padding:14px 20px;background:#fff;border:none;border-radius:10px;
-  color:#3c4043;font-size:15px;font-weight:600;cursor:pointer;
-  transition:box-shadow .2s,transform .1s;font-family:'Noto Serif TC',serif;
-}
-.btn-google:hover{box-shadow:0 6px 24px rgba(255,255,255,.18);transform:translateY(-1px);}
-.btn-google svg{width:20px;height:20px;flex-shrink:0;}
-.err-msg{color:var(--fail);font-size:12px;font-family:'Space Mono',monospace;margin-top:14px;text-align:center;}
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:20px;}
 
-/* ── Spinner ── */
-.spinner-wrap{text-align:center;padding:40px;}
-.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px;}
-.spinner-wrap p{color:var(--muted);font-size:12px;letter-spacing:2px;font-family:'Space Mono',monospace;}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--rs);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:none;font-family:'Noto Sans TC',sans-serif;}
+.btn-primary{background:var(--acc);color:#fff;}
+.btn-primary:hover{background:#2563eb;transform:translateY(-1px);}
+.btn-ghost{background:transparent;border:1px solid var(--b2);color:var(--t2);}
+.btn-ghost:hover{border-color:var(--b3);color:var(--t1);}
+.btn-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);}
+.btn-danger:hover{background:rgba(239,68,68,.2);}
+.btn-sm{padding:6px 13px;font-size:12px;}
+.btn-xs{padding:3px 9px;font-size:11px;}
 
-/* ── No Record ── */
-.no-record{text-align:center;max-width:380px;}
-.no-record .icon{font-size:52px;margin-bottom:18px;}
-.no-record h3{font-size:18px;margin-bottom:10px;}
-.no-record p{color:var(--muted);font-size:14px;line-height:1.9;margin-bottom:24px;}
-.chip{display:inline-block;padding:3px 12px;border-radius:20px;background:rgba(240,192,64,.12);color:var(--accent);font-size:12px;font-family:'Space Mono',monospace;}
+/* FORMS */
+.form-row{display:grid;gap:14px;margin-bottom:14px;}
+.g2{grid-template-columns:1fr 1fr;}
+.g3{grid-template-columns:1fr 1fr 1fr;}
+.gfull{grid-column:1/-1;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg label{font-size:11px;letter-spacing:2px;color:var(--t3);font-family:'JetBrains Mono',monospace;}
+.fg input,.fg select,.fg textarea{padding:9px 12px;background:var(--bg);border:1px solid var(--b1);border-radius:var(--rs);color:var(--t1);font-size:13px;font-family:'Noto Sans TC',sans-serif;outline:none;transition:border-color .15s,box-shadow .15s;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(59,130,246,.12);}
+.fg input:disabled{opacity:.4;cursor:not-allowed;}
+.fg select option{background:var(--s2);}
+.fg textarea{resize:vertical;font-family:'JetBrains Mono',monospace;font-size:12px;}
 
-/* ── Buttons ── */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:8px;font-size:13px;cursor:pointer;transition:all .18s;border:none;font-family:'Noto Serif TC',serif;letter-spacing:1px;}
-.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
-.btn-ghost:hover{border-color:var(--fail);color:var(--fail);}
-.btn-primary{background:linear-gradient(135deg,var(--accent),#d9a82e);color:#0b0e15;font-weight:700;}
-.btn-primary:hover{opacity:.9;transform:translateY(-1px);}
-.btn-secondary{background:var(--card);border:1px solid var(--border2);color:var(--text);}
-.btn-secondary:hover{border-color:var(--accent2);color:var(--accent2);}
-.btn-danger{background:rgba(242,107,107,.1);border:1px solid rgba(242,107,107,.25);color:var(--fail);}
-.btn-danger:hover{background:rgba(242,107,107,.2);}
-.btn-sm{padding:6px 14px;font-size:12px;}
-
-/* ── Student Dashboard ── */
-.dash-header{display:flex;justify-content:space-between;align-items:flex-start;width:100%;margin-bottom:28px;flex-wrap:wrap;gap:16px;}
-.stu-info h2{font-size:22px;font-weight:700;display:flex;align-items:center;gap:10px;}
-.stu-info h2 img{width:32px;height:32px;border-radius:50%;border:2px solid var(--border2);}
-.stu-info .meta{font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:5px;letter-spacing:.5px;}
-
-/* Summary */
-.summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:100%;margin-bottom:24px;}
-.sum-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;position:relative;overflow:hidden;}
-.sum-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
-.sum-card.c1::before{background:linear-gradient(90deg,var(--accent),#d9a82e);}
-.sum-card.c2::before{background:linear-gradient(90deg,var(--accent2),#3480c0);}
-.sum-card.c3::before{background:linear-gradient(90deg,var(--purple),#7b4fd4);}
-.sum-card .lbl{font-size:10px;letter-spacing:4px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:8px;}
-.sum-card .val{font-size:30px;font-weight:700;}
-.sum-card.c1 .val{color:var(--accent);}
-.sum-card.c2 .val{color:var(--accent2);}
-.sum-card.c3 .val{color:var(--purple);}
-.sum-card .sub{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:4px;}
-
-/* Grades table */
-.table-card{width:100%;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
-.table-title{padding:16px 24px;border-bottom:1px solid var(--border);font-size:11px;letter-spacing:4px;color:var(--muted);font-family:'Space Mono',monospace;}
+/* TABLES */
+.tbl-wrap{overflow-x:auto;border-radius:var(--rs);border:1px solid var(--b1);}
 table{width:100%;border-collapse:collapse;}
-thead th{padding:11px 24px;text-align:left;font-size:10px;letter-spacing:3px;color:var(--muted);font-family:'Space Mono',monospace;background:rgba(255,255,255,.018);font-weight:400;}
-tbody tr{border-top:1px solid var(--border);transition:background .15s;}
-tbody tr:hover{background:rgba(255,255,255,.025);}
-tbody td{padding:15px 24px;font-size:14px;}
-.score-wrap{display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-weight:700;}
-.bar-bg{width:72px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
-.bar{height:100%;border-radius:2px;transition:width 1s ease;}
-.s-pass .bar{background:var(--pass);}
-.s-fail .bar{background:var(--fail);}
-.s-mid  .bar{background:var(--warn);}
-.tag{font-size:10px;font-family:'Space Mono',monospace;padding:3px 9px;border-radius:4px;letter-spacing:1px;}
-.tag-ok{background:rgba(61,214,140,.12);color:var(--pass);}
-.tag-no{background:rgba(242,107,107,.12);color:var(--fail);}
+thead th{padding:10px 14px;text-align:left;font-size:10px;letter-spacing:2px;color:var(--t3);font-family:'JetBrains Mono',monospace;background:var(--s2);font-weight:400;white-space:nowrap;}
+tbody tr{border-top:1px solid var(--b1);transition:background .12s;}
+tbody tr:hover{background:rgba(255,255,255,.02);}
+tbody td{padding:11px 14px;font-size:13px;vertical-align:middle;}
+tfoot td{padding:11px 14px;font-size:13px;background:var(--s2);border-top:2px solid var(--b2);font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--acc2);}
 
-/* ── Admin Panel ── */
-.admin-bar{width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:12px;}
-.admin-bar h2{font-size:20px;font-weight:700;display:flex;align-items:center;gap:10px;}
-.admin-bar h2 img{width:28px;height:28px;border-radius:50%;}
-.admin-badge{font-size:10px;letter-spacing:2px;padding:3px 10px;border-radius:4px;background:rgba(155,114,245,.15);color:var(--purple);font-family:'Space Mono',monospace;}
-.admin-actions{display:flex;gap:10px;flex-wrap:wrap;}
-.stu-list{width:100%;display:flex;flex-direction:column;gap:12px;}
-.stu-row{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;transition:border-color .18s;}
-.stu-row:hover{border-color:var(--border2);}
-.stu-row-info h4{font-size:15px;font-weight:600;margin-bottom:3px;}
-.stu-row-info .sub{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;letter-spacing:.5px;}
-.stu-row-actions{display:flex;gap:8px;}
+/* SCORE INPUT */
+.si{width:72px;padding:5px 8px;background:var(--s2);border:1px solid var(--b1);border-radius:4px;color:var(--t1);font-size:13px;font-family:'JetBrains Mono',monospace;text-align:center;outline:none;transition:border-color .15s;}
+.si:focus{border-color:var(--acc);}
+.si.filled{border-color:var(--b3);background:var(--s3);}
 
-/* ── Modal ── */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;backdrop-filter:blur(4px);}
-.modal{background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:36px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.6);animation:fadeUp .3s ease both;}
-.modal h3{font-size:18px;font-weight:700;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-.form-full{grid-column:1/-1;}
-.form-group label{display:block;font-size:11px;letter-spacing:3px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:7px;}
-.form-group input{width:100%;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Space Mono',monospace;outline:none;transition:border-color .18s,box-shadow .18s;}
-.form-group input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(240,192,64,.1);}
-.form-group input:disabled{opacity:.45;cursor:not-allowed;}
-.subjects-label{font-size:11px;letter-spacing:3px;color:var(--muted);font-family:'Space Mono',monospace;display:block;margin:20px 0 10px;}
-.subject-row{display:grid;grid-template-columns:1fr 90px 32px;gap:8px;margin-bottom:8px;align-items:center;}
-.subject-row input{padding:9px 12px;}
-.btn-del-sub{width:32px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(242,107,107,.1);border:1px solid rgba(242,107,107,.2);border-radius:6px;color:var(--fail);cursor:pointer;font-size:16px;transition:background .15s;}
-.btn-del-sub:hover{background:rgba(242,107,107,.22);}
-.btn-add-sub{display:flex;align-items:center;gap:6px;background:rgba(77,157,224,.1);border:1px solid rgba(77,157,224,.2);border-radius:6px;color:var(--accent2);padding:7px 14px;font-size:12px;cursor:pointer;font-family:'Space Mono',monospace;transition:background .15s;margin-top:4px;}
-.btn-add-sub:hover{background:rgba(77,157,224,.2);}
-.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:11px;font-family:'JetBrains Mono',monospace;}
+.bb{background:rgba(59,130,246,.15);color:#93c5fd;}
+.bg{background:rgba(34,197,94,.15);color:#86efac;}
+.br{background:rgba(239,68,68,.15);color:#fca5a5;}
+.by{background:rgba(245,158,11,.15);color:#fcd34d;}
+.bp{background:rgba(168,85,247,.15);color:#d8b4fe;}
+.bgr{background:rgba(148,163,184,.1);color:var(--t2);}
 
-/* ── Empty ── */
-.form-group textarea{width:100%;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:"Space Mono",monospace;outline:none;transition:border-color .18s;resize:vertical;line-height:1.7;}
-.form-group textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(240,192,64,.1);}
-.import-row{font-size:12px;font-family:"Space Mono",monospace;padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;}
-.import-row .ok{color:var(--pass);}
-.import-row .bad{color:var(--fail);}
-.empty{text-align:center;padding:48px 24px;color:var(--muted);font-size:13px;font-family:'Space Mono',monospace;letter-spacing:1px;}
-
-
-/* ════════════════════════════════════════════
-   BATCH IMPORT
-════════════════════════════════════════════ */
-window.openImport = () => {
-  $("importText").value = "";
-  $("importPreview").innerHTML = "";
-  $("importOverlay").classList.remove("hidden");
-};
-window.closeImport = () => $("importOverlay").classList.add("hidden");
-window.closeImportIfBg = e => { if(e.target===$("importOverlay")) closeImport(); };
-
-window.runImport = async () => {
-  const lines = $("importText").value.trim().split("\n").filter(l=>l.trim());
-  if (!lines.length) { showToast("請貼上學生名單","err"); return; }
-
-  const preview = $("importPreview");
-  preview.innerHTML = "<div style='font-size:12px;color:var(--muted);font-family:monospace;margin-bottom:8px;'>匯入中...</div>";
-
-  let ok=0, fail=0, html="";
-
-  for (const line of lines) {
-    // 支援空格或 tab 分隔，格式: 學號 姓名 班級 學期 @domain
-    const parts = line.trim().split(/\s+/);
-    if (parts.length < 5) {
-      html += `<div class="import-row"><span class="bad">✕</span> <span style="color:var(--muted)">${line} — 格式錯誤（需要5欄）</span></div>`;
-      fail++; continue;
-    }
-    const [stuId, name, cls, semester, domain] = parts;
-    const email = stuId + domain;
-    const docId = email.replace(/[^a-z0-9]/g,"_");
-    try {
-      await setDoc(doc(db,"students",docId), {
-        email: email.toLowerCase(), name, class: cls, semester, rank:"", subjects:[]
-      });
-      html += `<div class="import-row"><span class="ok">✓</span> ${name} — ${email}</div>`;
-      ok++;
-    } catch(e) {
-      html += `<div class="import-row"><span class="bad">✕</span> ${name} — ${e.message}</div>`;
-      fail++;
-    }
-  }
-
-  preview.innerHTML = `
-    <div style="font-size:13px;margin-bottom:10px;">
-      <span style="color:var(--pass)">✓ 成功 ${ok} 筆</span>
-      ${fail>0?`　<span style="color:var(--fail)">✕ 失敗 ${fail} 筆</span>`:""}
-    </div>
-    <div style="max-height:200px;overflow-y:auto;">${html}</div>
-    <div style="margin-top:14px;text-align:right;">
-      <button class="btn btn-primary" onclick="closeImport();loadAdminList();">完成</button>
-    </div>`;
-};
-
-/* ── Toast ── */
-.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:12px 22px;font-size:13px;font-family:'Space Mono',monospace;box-shadow:0 8px 32px rgba(0,0,0,.4);opacity:0;transition:all .3s;pointer-events:none;z-index:200;white-space:nowrap;}
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:11px 20px;font-size:13px;opacity:0;transition:all .25s;pointer-events:none;z-index:999;white-space:nowrap;box-shadow:var(--shadow);}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-.toast.ok{border-color:rgba(61,214,140,.4);color:var(--pass);}
-.toast.err{border-color:rgba(242,107,107,.4);color:var(--fail);}
+.toast.ok{border-color:rgba(34,197,94,.4);color:var(--grn);}
+.toast.err{border-color:rgba(239,68,68,.4);color:var(--red);}
 
-footer{margin-top:48px;font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;letter-spacing:2px;text-align:center;}
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal{background:var(--s1);border:1px solid var(--b2);border-radius:14px;padding:28px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 64px rgba(0,0,0,.5);animation:fadeUp .25s ease;}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--b1);}
+.modal-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--b1);}
 
-@media(max-width:580px){
-  .summary-row{grid-template-columns:1fr;}
-  .site-header h1{font-size:26px;}
-  .bar-bg{display:none;}
-  .form-grid{grid-template-columns:1fr;}
+/* LOGIN */
+.center-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);background-image:radial-gradient(ellipse at 20% 30%,rgba(59,130,246,.07) 0%,transparent 60%),radial-gradient(ellipse at 80% 70%,rgba(6,182,212,.05) 0%,transparent 60%);}
+.auth-box{width:100%;max-width:400px;padding:40px;background:var(--s1);border:1px solid var(--b1);border-radius:16px;box-shadow:var(--shadow);text-align:center;}
+.auth-box h1{font-size:24px;font-weight:700;margin-bottom:6px;}
+.auth-box h1 em{font-style:normal;color:var(--acc);}
+.auth-box .sub{color:var(--t2);font-size:13px;margin-bottom:28px;line-height:1.7;}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:13px;background:#fff;border:none;border-radius:var(--rs);color:#3c4043;font-size:14px;font-weight:600;cursor:pointer;transition:box-shadow .15s,transform .1s;font-family:'Noto Sans TC',sans-serif;}
+.btn-google:hover{box-shadow:0 4px 20px rgba(255,255,255,.15);transform:translateY(-1px);}
+.btn-google svg{width:20px;height:20px;}
+
+/* STUDENT VIEW */
+.stu-score-item{background:var(--s2);border:1px solid var(--b1);border-radius:var(--rs);padding:14px 18px;display:flex;align-items:center;gap:16px;margin-bottom:10px;}
+.stu-score-item .pts{font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;min-width:60px;text-align:right;}
+.pts-high{color:var(--grn);}
+.pts-mid{color:var(--ylw);}
+.pts-low{color:var(--red);}
+.pts-none{color:var(--t3);font-size:13px;}
+
+/* TABS */
+.tabs{display:flex;gap:2px;background:var(--s2);padding:4px;border-radius:var(--rs);margin-bottom:20px;width:fit-content;}
+.tab{padding:7px 16px;border-radius:5px;font-size:13px;cursor:pointer;color:var(--t2);transition:all .15s;font-weight:500;}
+.tab.active{background:var(--s3);color:var(--t1);box-shadow:0 1px 4px rgba(0,0,0,.3);}
+
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .main{margin-left:0;}
+  .form-row.g2,.form-row.g3{grid-template-columns:1fr;}
 }
 </style>
 </head>
 <body>
-<div class="shell">
 
-<div class="site-header">
-  <div class="eyebrow">學生服務入口</div>
-  <h1>成績<em>查詢</em>系統</h1>
-  <div class="ruler"></div>
-</div>
-
-<!-- ══ Login ══ -->
-<div id="s-login" class="screen fade-up">
-  <div class="login-card">
-    <p>請使用你的 Google 帳號登入<br>系統將自動比對你的成績資料</p>
+<!-- LOGIN -->
+<div id="S-login" class="center-screen fade-up">
+  <div class="auth-box">
+    <h1>成績<em>管理</em>系統</h1>
+    <p class="sub">請使用 Google 帳號登入</p>
     <button class="btn-google" onclick="doSignIn()">
       <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
       使用 Google 帳號登入
     </button>
-    <div class="err-msg hidden" id="loginErr"></div>
+    <div id="loginErr" style="color:var(--red);font-size:12px;margin-top:10px;"></div>
   </div>
 </div>
 
-<!-- ══ Loading ══ -->
-<div id="s-loading" class="screen hidden">
-  <div class="spinner-wrap"><div class="spinner"></div><p>正在讀取資料⋯</p></div>
-</div>
-
-<!-- ══ No Record ══ -->
-<div id="s-norecord" class="screen hidden fade-up">
-  <div class="no-record">
-    <div class="icon">🔍</div>
-    <h3>查無成績資料</h3>
-    <p>系統中找不到與<br><span class="chip" id="noRecEmail"></span><br>對應的成績記錄，請聯絡教務處。</p>
-    <button class="btn btn-ghost" onclick="doSignOut()">登　出</button>
-  </div>
-</div>
-
-<!-- ══ Student Dashboard ══ -->
-<div id="s-student" class="screen hidden fade-up" style="width:100%">
-  <div class="dash-header">
-    <div class="stu-info">
-      <h2><img id="stuAvatar" src="" alt=""><span id="stuName">—</span></h2>
-      <div class="meta" id="stuMeta">—</div>
+<!-- BIND (student without binding) -->
+<div id="S-bind" class="center-screen hidden">
+  <div class="auth-box fade-up" style="max-width:460px;text-align:left;">
+    <h1 style="font-size:20px;">🔗 綁定學生帳號</h1>
+    <p class="sub" style="text-align:left;">你的帳號尚未綁定學生資料，請填寫以下資訊完成綁定。</p>
+    <div style="background:var(--s2);border:1px solid var(--b1);border-radius:var(--rs);padding:10px 14px;margin-bottom:18px;font-size:12px;color:var(--t2);font-family:'JetBrains Mono',monospace;" id="bindInfo"></div>
+    <div class="form-row g2">
+      <div class="fg"><label>班級</label><select id="bindClass"></select></div>
+      <div class="fg"><label>座號</label><input type="number" id="bindSeat" placeholder="1~50" min="1" max="50"></div>
     </div>
-    <button class="btn btn-ghost" onclick="doSignOut()">登　出</button>
-  </div>
-  <div class="summary-row">
-    <div class="sum-card c1"><div class="lbl">TOTAL</div><div class="val" id="sumTotal">—</div><div class="sub">總　分</div></div>
-    <div class="sum-card c2"><div class="lbl">AVERAGE</div><div class="val" id="sumAvg">—</div><div class="sub">平均分數</div></div>
-    <div class="sum-card c3"><div class="lbl">RANK</div><div class="val" id="sumRank">—</div><div class="sub">班級排名</div></div>
-  </div>
-  <div class="table-card">
-    <div class="table-title">SUBJECT GRADES ／ 各科成績</div>
-    <table><thead><tr><th>科　目</th><th>成　績</th><th>狀　態</th></tr></thead>
-      <tbody id="stuGradeBody"></tbody>
-    </table>
+    <div class="form-row"><div class="fg"><label>姓名（與名單相符）</label><input type="text" id="bindName" placeholder="請輸入姓名"></div></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary" style="flex:1" onclick="doBind()">確認綁定</button>
+      <button class="btn btn-ghost" onclick="doSignOut()">登出</button>
+    </div>
+    <div id="bindErr" style="color:var(--red);font-size:12px;margin-top:10px;"></div>
   </div>
 </div>
 
-<!-- ══ Admin Panel ══ -->
-<div id="s-admin" class="screen hidden fade-up" style="width:100%">
-  <div class="admin-bar">
-    <h2><img id="adminAvatar" src="" alt=""><span>成績管理</span><span class="admin-badge">ADMIN</span></h2>
-    <div class="admin-actions">
-      <button class="btn btn-primary" onclick="openModal()">＋ 新增學生</button>
-      <button class="btn btn-secondary" onclick="openImport()">📋 批次匯入</button>
-      <button class="btn btn-ghost" onclick="doSignOut()">登　出</button>
+<!-- STUDENT VIEW -->
+<div id="S-student" class="hidden">
+  <div class="topnav">
+    <div class="logo">成績<em>查詢</em></div>
+    <div class="topnav-right">
+      <span id="stuEmail" style="font-size:12px;color:var(--t3);"></span>
+      <button class="btn btn-ghost btn-sm" onclick="doSignOut()">登出</button>
     </div>
   </div>
-  <div class="stu-list" id="adminList"><div class="empty">載入中⋯</div></div>
-</div>
-
-</div><!-- /shell -->
-
-<!-- ══ Import Modal ══ -->
-<div class="modal-overlay hidden" id="importOverlay" onclick="closeImportIfBg(event)">
-  <div class="modal">
-    <h3>📋 批次匯入學生</h3>
-    <p style="color:var(--muted);font-size:13px;line-height:1.8;margin-bottom:16px;">
-      每行一筆，格式：<span style="color:var(--accent);font-family:monospace">學號 姓名 班級 學期 Email網域</span><br>
-      例：<span style="color:var(--accent2);font-family:monospace">1310402 吳宥磬 804 113-2 @tpjh.kh.edu.tw</span>
-    </p>
-    <div class="form-group">
-      <label>貼上學生名單</label>
-      <textarea id="importText" rows="10" placeholder="1310402 吳宥磬 804 113-2 @tpjh.kh.edu.tw&#10;1310403 林羿宇 804 113-2 @tpjh.kh.edu.tw&#10;..."></textarea>
+  <div style="padding:72px 20px 40px;max-width:680px;margin:0 auto;" class="fade-up">
+    <div style="margin-bottom:20px;">
+      <h2 id="stuInfoName" style="font-size:20px;font-weight:700;"></h2>
+      <p id="stuInfoMeta" style="color:var(--t2);font-size:13px;margin-top:3px;"></p>
     </div>
-    <div id="importPreview" style="margin-top:12px;"></div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeImport()">取　消</button>
-      <button class="btn btn-primary" onclick="runImport()">開始匯入</button>
+    <div class="tabs">
+      <div class="tab active" data-type="hw" onclick="stuSwitchTab(this,'hw')">📝 作業</div>
+      <div class="tab" data-type="exam" onclick="stuSwitchTab(this,'exam')">📋 考試</div>
+      <div class="tab" data-type="perf" onclick="stuSwitchTab(this,'perf')">⭐ 平時</div>
+      <div class="tab" data-type="att" onclick="stuSwitchTab(this,'att')">📅 出缺勤</div>
     </div>
+    <div id="stuScoreList"></div>
+    <div id="stuEmpty" class="hidden" style="text-align:center;padding:48px;color:var(--t3);font-size:13px;">此類別尚無成績</div>
   </div>
 </div>
 
-<!-- ══ Modal ══ -->
-<div class="modal-overlay hidden" id="modalOverlay" onclick="closeModalIfBg(event)">
-  <div class="modal">
-    <h3 id="modalTitle">新增學生成績</h3>
-    <div class="form-grid">
-      <div class="form-group form-full">
-        <label>學生 EMAIL（Google 帳號）</label>
-        <input type="email" id="fEmail" placeholder="student@gmail.com">
+<!-- ADMIN -->
+<div id="S-admin" class="hidden">
+  <div class="topnav">
+    <div class="logo">成績<em>管理</em>系統</div>
+    <div class="topnav-right">
+      <div class="user-pill"><img id="adminAvatar" src="" alt=""><span id="adminName"></span></div>
+      <button class="btn btn-ghost btn-sm" onclick="doSignOut()">登出</button>
+    </div>
+  </div>
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sidebar-label">成績</div>
+      <div class="nav-item active" data-page="scoreEntry" onclick="navTo('scoreEntry')"><span class="ico">📊</span>全班成績輸入</div>
+      <div class="nav-item" data-page="assignments" onclick="navTo('assignments')"><span class="ico">📝</span>作業管理</div>
+      <div class="sidebar-label">學生</div>
+      <div class="nav-item" data-page="students" onclick="navTo('students')"><span class="ico">👥</span>學生名單</div>
+      <div class="nav-item" data-page="bindings" onclick="navTo('bindings')"><span class="ico">🔗</span>帳號綁定</div>
+      <div class="sidebar-label">設定</div>
+      <div class="nav-item" data-page="classes" onclick="navTo('classes')"><span class="ico">🏫</span>班級管理</div>
+    </div>
+    <div class="main">
+
+      <!-- PAGE: 全班成績輸入 -->
+      <div class="page active" id="page-scoreEntry">
+        <div class="ph"><div class="ph-left"><h2>📊 全班成績輸入</h2><p>選擇班級與項目，填入每位學生分數</p></div></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;">
+          <div class="fg" style="min-width:110px;"><label>班級</label><select id="seClass" onchange="seLoadItems()"></select></div>
+          <div class="fg" style="min-width:200px;"><label>作業 / 考試項目</label><select id="seItem" onchange="seLoadSheet()"></select></div>
+          <button class="btn btn-primary" onclick="seSave()">💾 儲存全班成績</button>
+        </div>
+        <div id="seSheet"><div style="text-align:center;padding:48px;color:var(--t3);">請先選擇班級與項目</div></div>
       </div>
-      <div class="form-group">
-        <label>姓　名</label>
-        <input type="text" id="fName" placeholder="王小明">
+
+      <!-- PAGE: 作業管理 -->
+      <div class="page" id="page-assignments">
+        <div class="ph">
+          <div class="ph-left"><h2>📝 作業管理</h2><p>新增作業、考試、平時或出缺勤項目</p></div>
+          <button class="btn btn-primary" onclick="openAsgModal()">＋ 新增項目</button>
+        </div>
+        <div style="margin-bottom:14px;"><div class="fg" style="max-width:150px;"><label>篩選班級</label><select id="asgFilter" onchange="loadAsgList()"></select></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>名稱</th><th>類型</th><th>班級</th><th>滿分</th><th>建立</th><th></th></tr></thead><tbody id="asgTbody"></tbody></table></div>
       </div>
-      <div class="form-group">
-        <label>班　級</label>
-        <input type="text" id="fClass" placeholder="資工二甲">
+
+      <!-- PAGE: 學生名單 -->
+      <div class="page" id="page-students">
+        <div class="ph">
+          <div class="ph-left"><h2>👥 學生名單</h2><p>管理學生基本資料</p></div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost" onclick="openImportModal()">📋 批次匯入</button>
+            <button class="btn btn-primary" onclick="openStuModal()">＋ 新增</button>
+          </div>
+        </div>
+        <div style="margin-bottom:14px;"><div class="fg" style="max-width:150px;"><label>篩選班級</label><select id="stuFilter" onchange="loadStuList()"></select></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>座號</th><th>姓名</th><th>班級</th><th>綁定狀態</th><th></th></tr></thead><tbody id="stuTbody"></tbody></table></div>
       </div>
-      <div class="form-group">
-        <label>學　期</label>
-        <input type="text" id="fSemester" placeholder="113-1">
+
+      <!-- PAGE: 帳號綁定 -->
+      <div class="page" id="page-bindings">
+        <div class="ph"><div class="ph-left"><h2>🔗 帳號綁定管理</h2><p>查看、修改或移除學生的 Google 帳號綁定</p></div></div>
+        <div style="margin-bottom:14px;"><div class="fg" style="max-width:150px;"><label>篩選班級</label><select id="bindFilter" onchange="loadBindList()"></select></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>座號</th><th>姓名</th><th>班級</th><th>綁定 Google 帳號</th><th>綁定時間</th><th></th></tr></thead><tbody id="bindTbody"></tbody></table></div>
       </div>
-      <div class="form-group">
-        <label>班級排名</label>
-        <input type="text" id="fRank" placeholder="3 / 42">
+
+      <!-- PAGE: 班級管理 -->
+      <div class="page" id="page-classes">
+        <div class="ph">
+          <div class="ph-left"><h2>🏫 班級管理</h2><p>新增或刪除班級</p></div>
+          <button class="btn btn-primary" onclick="openClsModal()">＋ 新增班級</button>
+        </div>
+        <div id="clsList" style="display:flex;flex-direction:column;gap:10px;"></div>
       </div>
+
     </div>
-    <span class="subjects-label">各科成績</span>
-    <div id="subjectRows"></div>
-    <button class="btn-add-sub" onclick="addSubjectRow()">＋ 新增科目</button>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal()">取　消</button>
-      <button class="btn btn-primary" onclick="saveStudent()">儲　存</button>
+  </div>
+</div>
+
+<!-- MODALS -->
+<!-- Assignment -->
+<div class="modal-bg hidden" id="M-asg" onclick="mbg(event,'M-asg')">
+  <div class="modal"><h3 id="asgMT">新增項目</h3>
+    <div class="form-row"><div class="fg"><label>名稱</label><input type="text" id="asgName" placeholder="第一次作業"></div></div>
+    <div class="form-row g3">
+      <div class="fg"><label>類型</label><select id="asgType"><option value="hw">📝 作業</option><option value="exam">📋 考試</option><option value="perf">⭐ 平時</option><option value="att">📅 出缺勤</option></select></div>
+      <div class="fg"><label>班級</label><select id="asgClass"></select></div>
+      <div class="fg"><label>滿分</label><input type="number" id="asgMax" value="100" min="1"></div>
     </div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="cm('M-asg')">取消</button><button class="btn btn-primary" onclick="saveAsg()">儲存</button></div>
+  </div>
+</div>
+
+<!-- Student -->
+<div class="modal-bg hidden" id="M-stu" onclick="mbg(event,'M-stu')">
+  <div class="modal"><h3 id="stuMT">新增學生</h3>
+    <div class="form-row g2">
+      <div class="fg"><label>班級</label><select id="stuCls"></select></div>
+      <div class="fg"><label>座號</label><input type="number" id="stuSeat" min="1" max="50" placeholder="1~50"></div>
+    </div>
+    <div class="form-row"><div class="fg"><label>姓名</label><input type="text" id="stuName2" placeholder="王小明"></div></div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="cm('M-stu')">取消</button><button class="btn btn-primary" onclick="saveStu()">儲存</button></div>
+  </div>
+</div>
+
+<!-- Import -->
+<div class="modal-bg hidden" id="M-import" onclick="mbg(event,'M-import')">
+  <div class="modal" style="max-width:560px;"><h3>📋 批次匯入學生</h3>
+    <p style="color:var(--t2);font-size:12px;margin-bottom:12px;line-height:1.8;">每行一筆，格式：<code style="color:var(--acc);">座號 姓名 班級</code><br>例：<code style="color:var(--acc2);">1 吳宥磬 804</code></p>
+    <div class="fg"><label>貼上名單</label><textarea id="importTxt" rows="10" placeholder="1 吳宥磬 804&#10;2 林羿宇 804&#10;1 李宥萱 806"></textarea></div>
+    <div id="importResult" style="margin-top:10px;max-height:160px;overflow-y:auto;font-size:12px;font-family:'JetBrains Mono',monospace;"></div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="cm('M-import')">關閉</button><button class="btn btn-primary" onclick="runImport()">開始匯入</button></div>
+  </div>
+</div>
+
+<!-- Class -->
+<div class="modal-bg hidden" id="M-cls" onclick="mbg(event,'M-cls')">
+  <div class="modal" style="max-width:360px;"><h3>新增班級</h3>
+    <div class="fg"><label>班級名稱</label><input type="text" id="clsName" placeholder="例：805"></div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="cm('M-cls')">取消</button><button class="btn btn-primary" onclick="saveCls()">新增</button></div>
+  </div>
+</div>
+
+<!-- Rebind -->
+<div class="modal-bg hidden" id="M-rebind" onclick="mbg(event,'M-rebind')">
+  <div class="modal" style="max-width:400px;"><h3>修改綁定帳號</h3>
+    <p style="color:var(--t2);font-size:13px;margin-bottom:14px;">修改後學生下次登入即生效。</p>
+    <input type="hidden" id="rebindUid">
+    <div class="fg"><label>新 Google Email</label><input type="email" id="rebindEmail" placeholder="student@gmail.com"></div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="cm('M-rebind')">取消</button><button class="btn btn-primary" onclick="saveRebind()">確認</button></div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
-<footer>© 2025 成績查詢系統　｜　如有疑問請洽教務處</footer>
 
 <script type="module">
-import { initializeApp }
-  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-import { getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc, query, where }
-  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import {
+  getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc,
+  query, where, orderBy, serverTimestamp, writeBatch
+} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyC0AF7-_ZzkeiInZRacvEtxSG8vVBloRFM",
-  authDomain:        "gradelookup-bf204.firebaseapp.com",
-  projectId:         "gradelookup-bf204",
-  storageBucket:     "gradelookup-bf204.firebasestorage.app",
-  messagingSenderId: "170384586457",
-  appId:             "1:170384586457:web:ffe28a5f79156b6ee570c8"
+/* ══════════════════════════════
+   ★ 填入你的 Firebase 設定
+══════════════════════════════ */
+const FB = {
+  apiKey:"AIzaSyC0AF7-_ZzkeiInZRacvEtxSG8vVBloRFM",
+  authDomain:"gradelookup-bf204.firebaseapp.com",
+  projectId:"gradelookup-bf204",
+  storageBucket:"gradelookup-bf204.firebasestorage.app",
+  messagingSenderId:"170384586457",
+  appId:"1:170384586457:web:ffe28a5f79156b6ee570c8"
 };
+/* ★ 老師 email（可多個）*/
+const ADMINS = ["teacher@gmail.com"];  // ← 改成你的 email
 
-/* ★ 改成你自己的 Google email */
-const ADMIN_EMAILS = [
-  "019@tpjh.kh.edu.tw"
-];
+const app  = initializeApp(FB);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+const prov = new GoogleAuthProvider();
 
-const app      = initializeApp(FIREBASE_CONFIG);
-const auth     = getAuth(app);
-const db       = getFirestore(app);
-const provider = new GoogleAuthProvider();
-
-const $    = id => document.getElementById(id);
-const show = id => {
-  ["s-login","s-loading","s-norecord","s-student","s-admin"]
-    .forEach(s => $(s).classList.toggle("hidden", s !== id));
+/* helpers */
+const $ = id => document.getElementById(id);
+const toast = (msg, type="ok") => {
+  const t=$("toast"); t.textContent=msg; t.className=`toast ${type} show`;
+  setTimeout(()=>t.classList.remove("show"),2800);
 };
+const cm = id => $(id).classList.add("hidden");
+window.cm = cm;
+window.mbg = (e,id) => { if(e.target===$(id)) cm(id); };
 
-/* ── Sign in / out ── */
+const TYPE_LBL = {hw:"作業",exam:"考試",perf:"平時表現",att:"出缺勤"};
+const TYPE_CLR = {hw:"bb",exam:"br",perf:"bg",att:"by"};
+
+let ME = null;
+let classes = [];  // [{id,name}]
+let stuCache = []; // [{id,seat,name,class}]
+
+/* ══════════════════ AUTH ══════════════════ */
 window.doSignIn = async () => {
-  try { await signInWithPopup(auth, provider); }
-  catch(e) {
-    const el = $("loginErr");
-    el.textContent = "⚠ 登入失敗：" + e.message;
-    el.classList.remove("hidden");
-  }
+  try { await signInWithPopup(auth, prov); }
+  catch(e){ $("loginErr").textContent="登入失敗："+e.message; }
 };
 window.doSignOut = () => fbOut(auth);
 
-/* ── Auth state ── */
 onAuthStateChanged(auth, async user => {
-  if (!user) { show("s-login"); return; }
-  show("s-loading");
-  if (ADMIN_EMAILS.map(e => e.toLowerCase()).includes(user.email.toLowerCase())) {
-    $("adminAvatar").src = user.photoURL || "";
-    await loadAdminList();
-    show("s-admin");
+  ME = user;
+  if(!user){ showS("login"); return; }
+  await loadClasses();
+
+  if(ADMINS.map(e=>e.toLowerCase()).includes(user.email.toLowerCase())){
+    $("adminAvatar").src = user.photoURL||"";
+    $("adminName").textContent = user.displayName||user.email;
+    await loadStuCache();
+    populateSelects();
+    loadAsgList(); loadStuList(); loadBindList(); renderClsList();
+    seLoadItems();
+    showS("admin");
   } else {
-    await loadStudentGrades(user);
+    const binding = await getBinding(user.uid);
+    if(binding){ await showStudentScreen(user, binding); }
+    else { showBindScreen(user); }
   }
 });
 
-/* ════════════════════════════════════════
-   STUDENT
-════════════════════════════════════════ */
-async function loadStudentGrades(user) {
-  const q    = query(collection(db, "students"), where("email", "==", user.email.toLowerCase()));
+function showS(s){
+  ["login","bind","student","admin"].forEach(n => $(s==="login"?`S-login`:s==="bind"?`S-bind`:s==="student"?`S-student`:`S-admin`).classList.add("hidden"));
+  $(`S-${s}`).classList.remove("hidden");
+}
+// Simplified version:
+function showScreen(s){
+  document.querySelectorAll("[id^='S-']").forEach(el=>el.classList.add("hidden"));
+  $(`S-${s}`).classList.remove("hidden");
+}
+
+/* ══════════════════ CLASSES ══════════════════ */
+async function loadClasses(){
+  const snap = await getDocs(collection(db,"classes"));
+  classes = snap.docs.map(d=>({id:d.id,...d.data()}));
+  if(classes.length===0){
+    const batch = writeBatch(db);
+    ["804","806","705"].forEach(name=>{
+      batch.set(doc(collection(db,"classes")),{name,createdAt:serverTimestamp()});
+    });
+    await batch.commit();
+    const snap2 = await getDocs(collection(db,"classes"));
+    classes = snap2.docs.map(d=>({id:d.id,...d.data()}));
+  }
+}
+
+async function loadStuCache(){
+  const snap = await getDocs(collection(db,"students"));
+  stuCache = snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+
+function populateSelects(){
+  const allOpt = `<option value="">全部班級</option>`;
+  const opts = classes.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
+  // score entry
+  if($("seClass")) $("seClass").innerHTML = opts;
+  // assignment modal
+  if($("asgClass")) $("asgClass").innerHTML = classes.map(c=>`<option value="${c.name}">${c.name}</option>`).join("");
+  // student modal
+  if($("stuCls")) $("stuCls").innerHTML = classes.map(c=>`<option value="${c.name}">${c.name}</option>`).join("");
+  // filters (with "all")
+  if($("asgFilter")) $("asgFilter").innerHTML = allOpt+opts;
+  if($("stuFilter")) $("stuFilter").innerHTML = allOpt+opts;
+  if($("bindFilter")) $("bindFilter").innerHTML = allOpt+opts;
+  // bind screen
+  if($("bindClass")) $("bindClass").innerHTML = classes.map(c=>`<option value="${c.name}">${c.name}</option>`).join("");
+}
+
+/* ══════════════════ BIND ══════════════════ */
+async function getBinding(uid){
+  const snap = await getDoc(doc(db,"bindings",uid));
+  return snap.exists()?snap.data():null;
+}
+
+function showBindScreen(user){
+  populateSelects();
+  $("bindInfo").textContent = "Google 帳號："+user.email;
+  showScreen("bind");
+}
+
+window.doBind = async () => {
+  const clsName = $("bindClass").value;
+  const seat    = parseInt($("bindSeat").value);
+  const name    = $("bindName").value.trim();
+  if(!clsName||!seat||!name){ $("bindErr").textContent="請填寫所有欄位"; return; }
+  const q = query(collection(db,"students"),where("class","==",clsName),where("seat","==",seat));
   const snap = await getDocs(q);
-  if (snap.empty) {
-    $("noRecEmail").textContent = user.email;
-    show("s-norecord"); return;
-  }
-  const d = snap.docs[0].data();
-  $("stuAvatar").src       = user.photoURL || "";
-  $("stuName").textContent = d.name;
-  $("stuMeta").textContent = `${user.email}\u3000|\u3000${d.class}\u3000|\u3000${d.semester}`;
-
-  const scores = (d.subjects || []).map(s => s.score);
-  const total  = scores.reduce((a, b) => a + b, 0);
-  $("sumTotal").textContent = total;
-  $("sumAvg").textContent   = scores.length ? (total / scores.length).toFixed(1) : "—";
-  $("sumRank").textContent  = d.rank || "—";
-
-  const tbody = $("stuGradeBody");
-  tbody.innerHTML = "";
-  (d.subjects || []).forEach(sub => {
-    const c   = sub.score >= 80 ? "s-pass" : sub.score >= 60 ? "s-mid" : "s-fail";
-    const tag = sub.score >= 60
-      ? '<span class="tag tag-ok">及格</span>'
-      : '<span class="tag tag-no">不及格</span>';
-    tbody.insertAdjacentHTML("beforeend", `
-      <tr>
-        <td>${sub.name}</td>
-        <td><div class="score-wrap ${c}">
-          <span>${sub.score}</span>
-          <div class="bar-bg"><div class="bar" style="width:0" data-w="${sub.score}%"></div></div>
-        </div></td>
-        <td>${tag}</td>
-      </tr>`);
+  if(snap.empty){ $("bindErr").textContent="查無此班級座號，請確認或聯絡老師"; return; }
+  const stuDoc = snap.docs[0];
+  if(stuDoc.data().name!==name){ $("bindErr").textContent="姓名不符，請確認"; return; }
+  await setDoc(doc(db,"bindings",ME.uid),{
+    uid:ME.uid, email:ME.email, studentId:stuDoc.id,
+    className:clsName, seat, name, boundAt:serverTimestamp()
   });
-  setTimeout(() => document.querySelectorAll(".bar").forEach(b => b.style.width = b.dataset.w), 120);
-  show("s-student");
+  await showStudentScreen(ME,{studentId:stuDoc.id,className:clsName,seat,name});
+};
+
+/* ══════════════════ STUDENT VIEW ══════════════════ */
+let stuAllScores = [];
+let stuCurType = "hw";
+
+async function showStudentScreen(user, binding){
+  $("stuEmail").textContent = user.email;
+  $("stuInfoName").textContent = binding.name;
+  $("stuInfoMeta").textContent = `${binding.className} 班・第 ${binding.seat} 號`;
+  showScreen("student");
+
+  const asgQ = query(collection(db,"assignments"),where("class","==",binding.className));
+  const asgSnap = await getDocs(asgQ);
+  const asgs = {};
+  asgSnap.forEach(d=>{ asgs[d.id]={...d.data(),id:d.id}; });
+
+  const scQ = query(collection(db,"scores"),where("studentId","==",binding.studentId));
+  const scSnap = await getDocs(scQ);
+  const scMap = {};
+  scSnap.forEach(d=>{ scMap[d.data().assignmentId]=d.data().score; });
+
+  stuAllScores = Object.values(asgs).map(a=>({...a, score: scMap[a.id]??null}));
+  renderStuScores();
 }
 
-/* ════════════════════════════════════════
-   ADMIN — 學生清單
-════════════════════════════════════════ */
-async function loadAdminList() {
-  const snap = await getDocs(collection(db, "students"));
-  const list = $("adminList");
-  list.innerHTML = "";
-  if (snap.empty) {
-    list.innerHTML = '<div class="empty">尚無學生資料，點「新增學生」開始建立</div>';
-    return;
-  }
-  snap.forEach(ds => {
-    const d = ds.data();
-    const scores = (d.subjects || []).map(s => s.score);
-    const avg = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : "—";
-    list.insertAdjacentHTML("beforeend", `
-      <div class="stu-row">
-        <div class="stu-row-info">
-          <h4>${d.name} <span style="font-size:12px;color:var(--muted);font-weight:400">${d.class} ／ ${d.semester}</span></h4>
-          <div class="sub">${d.email}　｜　平均 ${avg}　｜　排名 ${d.rank || "—"}</div>
-        </div>
-        <div class="stu-row-actions">
-          <button class="btn btn-secondary btn-sm" onclick="editStudent('${ds.id}')">編輯</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteStudent('${ds.id}','${d.name}')">刪除</button>
-        </div>
-      </div>`);
-  });
-}
-
-/* ════════════════════════════════════════
-   ADMIN — 單筆新增 / 編輯 Modal
-════════════════════════════════════════ */
-let editingId = null;
-
-window.openModal = () => {
-  editingId = null;
-  $("modalTitle").textContent = "新增學生成績";
-  ["fEmail","fName","fClass","fSemester","fRank"].forEach(id => $(id).value = "");
-  $("fEmail").disabled = false;
-  $("subjectRows").innerHTML = "";
-  addSubjectRow(); addSubjectRow(); addSubjectRow();
-  $("modalOverlay").classList.remove("hidden");
-};
-window.closeModal    = () => $("modalOverlay").classList.add("hidden");
-window.closeModalIfBg = e => { if (e.target === $("modalOverlay")) closeModal(); };
-
-window.addSubjectRow = (name = "", score = "") => {
-  const div = document.createElement("div");
-  div.className = "subject-row";
-  div.innerHTML = `
-    <input type="text"   placeholder="科目名稱" value="${name}">
-    <input type="number" placeholder="分數" min="0" max="100" value="${score}">
-    <button class="btn-del-sub" onclick="this.parentElement.remove()">✕</button>`;
-  $("subjectRows").appendChild(div);
+window.stuSwitchTab = (el, type) => {
+  stuCurType = type;
+  document.querySelectorAll("#S-student .tab").forEach(t=>t.classList.remove("active"));
+  el.classList.add("active");
+  renderStuScores();
 };
 
-window.editStudent = async id => {
-  editingId = id;
-  const snap = await getDoc(doc(db, "students", id));
-  const d = snap.data();
-  $("modalTitle").textContent = "編輯學生成績";
-  $("fEmail").value    = d.email;
-  $("fEmail").disabled = true;
-  $("fName").value     = d.name;
-  $("fClass").value    = d.class;
-  $("fSemester").value = d.semester;
-  $("fRank").value     = d.rank || "";
-  $("subjectRows").innerHTML = "";
-  (d.subjects || []).forEach(s => addSubjectRow(s.name, s.score));
-  $("modalOverlay").classList.remove("hidden");
-};
-
-window.deleteStudent = async (id, name) => {
-  if (!confirm(`確定要刪除「${name}」的所有成績嗎？`)) return;
-  await deleteDoc(doc(db, "students", id));
-  showToast(`已刪除 ${name}`, "ok");
-  loadAdminList();
-};
-
-window.saveStudent = async () => {
-  const email    = $("fEmail").value.trim().toLowerCase();
-  const name     = $("fName").value.trim();
-  const cls      = $("fClass").value.trim();
-  const semester = $("fSemester").value.trim();
-  const rank     = $("fRank").value.trim();
-  if (!email || !name) { showToast("請填寫 Email 和姓名", "err"); return; }
-
-  const subjects = [];
-  $("subjectRows").querySelectorAll(".subject-row").forEach(row => {
-    const [i1, i2] = row.querySelectorAll("input");
-    const n = i1.value.trim(), s = parseInt(i2.value);
-    if (n && !isNaN(s)) subjects.push({ name: n, score: s });
-  });
-
-  const docId = editingId || email.replace(/[^a-z0-9]/g, "_");
-  await setDoc(doc(db, "students", docId), { email, name, class: cls, semester, rank, subjects });
-  showToast(`已儲存 ${name}`, "ok");
-  closeModal();
-  loadAdminList();
-};
-
-/* ════════════════════════════════════════
-   ADMIN — 批次匯入
-════════════════════════════════════════ */
-window.openImport = () => {
-  $("importText").value = "";
-  $("importPreview").innerHTML = "";
-  $("importOverlay").classList.remove("hidden");
-};
-window.closeImport    = () => $("importOverlay").classList.add("hidden");
-window.closeImportIfBg = e => { if (e.target === $("importOverlay")) closeImport(); };
-
-window.runImport = async () => {
-  const raw = $("importText").value.trim();
-  const lines = raw.split("\n").filter(l => l.trim());
-  if (!lines.length) { showToast("請貼上學生名單", "err"); return; }
-
-  const preview = $("importPreview");
-  preview.innerHTML = "<div style='font-size:12px;color:var(--muted);font-family:monospace;margin-bottom:8px;'>匯入中...</div>";
-
-  let ok = 0, fail = 0, html = "";
-
-  for (const line of lines) {
-    const parts = line.trim().split(/\s+/);
-    if (parts.length < 5) {
-      html += `<div class="import-row"><span class="bad">✕</span> <span style="color:var(--muted)">${line} — 格式錯誤（需要5欄：學號 姓名 班級 學期 @domain）</span></div>`;
-      fail++; continue;
-    }
-    const [stuId, name, cls, semester, domain] = parts;
-    const email = (stuId + domain).toLowerCase();
-    const docId = email.replace(/[^a-z0-9]/g, "_");
-    try {
-      await setDoc(doc(db, "students", docId), {
-        email, name, class: cls, semester, rank: "", subjects: []
-      });
-      html += `<div class="import-row"><span class="ok">✓</span> ${name} — ${email}</div>`;
-      ok++;
-    } catch(e) {
-      html += `<div class="import-row"><span class="bad">✕</span> ${name} — ${e.message}</div>`;
-      fail++;
-    }
-  }
-
-  preview.innerHTML = `
-    <div style="font-size:13px;margin-bottom:10px;">
-      <span style="color:var(--pass)">✓ 成功 ${ok} 筆</span>
-      ${fail > 0 ? `　<span style="color:var(--fail)">✕ 失敗 ${fail} 筆</span>` : ""}
-    </div>
-    <div style="max-height:200px;overflow-y:auto;">${html}</div>
-    <div style="margin-top:14px;text-align:right;">
-      <button class="btn btn-primary" onclick="closeImport();loadAdminList();">完成</button>
+function renderStuScores(){
+  const filtered = stuAllScores.filter(a=>a.type===stuCurType);
+  const list = $("stuScoreList"), empty = $("stuEmpty");
+  if(!filtered.length){ list.innerHTML=""; empty.classList.remove("hidden"); return; }
+  empty.classList.add("hidden");
+  list.innerHTML = filtered.map(a=>{
+    const s=a.score, has=s!==null;
+    const pct = has?s/a.maxScore:0;
+    const cls = !has?"pts-none":pct>=.8?"pts-high":pct>=.6?"pts-mid":"pts-low";
+    const disp = has?`${s}<span style="font-size:11px;color:var(--t3)">/${a.maxScore}</span>`:"未登錄";
+    return `<div class="stu-score-item">
+      <div style="flex:1">
+        <div style="font-weight:600;">${a.name}</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:2px;">${TYPE_LBL[a.type]||a.type}</div>
+      </div>
+      <div class="pts ${cls}">${disp}</div>
     </div>`;
+  }).join("");
+}
+
+/* ══════════════════ NAV ══════════════════ */
+window.navTo = page => {
+  document.querySelectorAll(".nav-item").forEach(el=>el.classList.toggle("active",el.dataset.page===page));
+  document.querySelectorAll(".page").forEach(el=>el.classList.toggle("active",el.id==="page-"+page));
+  if(page==="assignments") loadAsgList();
+  if(page==="students")    loadStuList();
+  if(page==="bindings")    loadBindList();
+  if(page==="classes")     renderClsList();
+  if(page==="scoreEntry")  seLoadItems();
 };
 
-/* ── Toast ── */
-function showToast(msg, type = "ok") {
-  const t = $("toast");
-  t.textContent = msg;
-  t.className = `toast ${type} show`;
-  setTimeout(() => t.classList.remove("show"), 2800);
+/* ══════════════════ CLASSES PAGE ══════════════════ */
+window.openClsModal = ()=>{ $("clsName").value=""; $("M-cls").classList.remove("hidden"); };
+window.saveCls = async()=>{
+  const name=$("clsName").value.trim();
+  if(!name){ toast("請輸入名稱","err"); return; }
+  if(classes.find(c=>c.name===name)){ toast("已存在","err"); return; }
+  await setDoc(doc(collection(db,"classes")),{name,createdAt:serverTimestamp()});
+  toast("已新增 "+name); cm("M-cls");
+  await loadClasses(); populateSelects(); renderClsList();
+};
+window.deleteCls = async(id,name)=>{
+  if(!confirm(`刪除「${name}」班？`)) return;
+  await deleteDoc(doc(db,"classes",id));
+  toast("已刪除"); await loadClasses(); populateSelects(); renderClsList();
+};
+function renderClsList(){
+  const el=$("clsList");
+  if(!classes.length){ el.innerHTML='<div style="text-align:center;color:var(--t3);padding:40px;">尚無班級</div>'; return; }
+  el.innerHTML=classes.map(c=>`
+    <div style="display:flex;align-items:center;background:var(--s2);border:1px solid var(--b1);border-radius:var(--rs);padding:14px 18px;">
+      <span style="font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--t1);">${c.name}</span>
+      <span style="margin-left:8px;color:var(--t3);font-size:13px;">班</span>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button class="btn btn-danger btn-sm" onclick="deleteCls('${c.id}','${c.name}')">刪除</button>
+      </div>
+    </div>`).join("");
 }
+
+/* ══════════════════ ASSIGNMENTS ══════════════════ */
+let editAsgId=null;
+window.openAsgModal=(id=null)=>{
+  editAsgId=id;
+  $("asgMT").textContent=id?"編輯項目":"新增項目";
+  if(!id){ $("asgName").value=""; $("asgType").value="hw"; $("asgMax").value=100; }
+  $("asgClass").innerHTML=classes.map(c=>`<option value="${c.name}">${c.name}</option>`).join("");
+  $("M-asg").classList.remove("hidden");
+};
+window.saveAsg=async()=>{
+  const name=$("asgName").value.trim(), type=$("asgType").value,
+        cls=$("asgClass").value, max=parseInt($("asgMax").value)||100;
+  if(!name||!cls){ toast("請填寫名稱","err"); return; }
+  const id=editAsgId||doc(collection(db,"assignments")).id;
+  await setDoc(doc(db,"assignments",id),{name,type,class:cls,maxScore:max,createdAt:serverTimestamp()});
+  toast(editAsgId?"已更新":"已新增"); cm("M-asg"); loadAsgList(); seLoadItems();
+};
+window.deleteAsg=async(id,name)=>{
+  if(!confirm(`刪除「${name}」？相關成績也會刪除。`)) return;
+  const batch=writeBatch(db);
+  batch.delete(doc(db,"assignments",id));
+  const scSnap=await getDocs(query(collection(db,"scores"),where("assignmentId","==",id)));
+  scSnap.forEach(d=>batch.delete(d.ref));
+  await batch.commit(); toast("已刪除"); loadAsgList();
+};
+async function loadAsgList(){
+  const fid=$("asgFilter")?.value;
+  const fcls=classes.find(c=>c.id===fid)?.name||"";
+  const q=fcls?query(collection(db,"assignments"),where("class","==",fcls)):collection(db,"assignments");
+  const snap=await getDocs(q);
+  const tbody=$("asgTbody");
+  if(snap.empty){ tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--t3);padding:28px;">尚無項目</td></tr>`; return; }
+  tbody.innerHTML=snap.docs.map(d=>{
+    const a=d.data(), dt=a.createdAt?.toDate?.()?.toLocaleDateString("zh-TW")||"—";
+    return `<tr>
+      <td><strong>${a.name}</strong></td>
+      <td><span class="badge ${TYPE_CLR[a.type]||'bgr'}">${TYPE_LBL[a.type]||a.type}</span></td>
+      <td><span class="badge bb">${a.class}</span></td>
+      <td class="mono">${a.maxScore}</td>
+      <td style="color:var(--t3);font-size:12px;">${dt}</td>
+      <td><button class="btn btn-danger btn-xs" onclick="deleteAsg('${d.id}','${a.name}')">刪除</button></td>
+    </tr>`;
+  }).join("");
+}
+window.loadAsgList=loadAsgList;
+
+/* ══════════════════ SCORE ENTRY ══════════════════ */
+window.seLoadItems=async()=>{
+  const cid=$("seClass")?.value;
+  const cls=classes.find(c=>c.id===cid)?.name||"";
+  const sel=$("seItem"); if(!sel) return;
+  if(!cls){ sel.innerHTML='<option>請選班級</option>'; return; }
+  const snap=await getDocs(query(collection(db,"assignments"),where("class","==",cls)));
+  if(snap.empty){ sel.innerHTML='<option>此班尚無項目</option>'; $("seSheet").innerHTML='<div style="text-align:center;padding:48px;color:var(--t3);">請先在「作業管理」新增項目</div>'; return; }
+  sel.innerHTML=snap.docs.map(d=>`<option value="${d.id}">${d.data().name}（${TYPE_LBL[d.data().type]}）</option>`).join("");
+  seLoadSheet();
+};
+
+window.seLoadSheet=async()=>{
+  const asgId=$("seItem")?.value;
+  const cid=$("seClass")?.value;
+  const cls=classes.find(c=>c.id===cid)?.name||"";
+  if(!asgId||!cls) return;
+  const asg=(await getDoc(doc(db,"assignments",asgId))).data();
+  if(!asg) return;
+
+  const stuSnap=await getDocs(query(collection(db,"students"),where("class","==",cls),orderBy("seat")));
+  const stus=stuSnap.docs.map(d=>({id:d.id,...d.data()}));
+
+  const scSnap=await getDocs(query(collection(db,"scores"),where("assignmentId","==",asgId)));
+  const scMap={};
+  scSnap.forEach(d=>{ scMap[d.data().studentId]=d.data().score; });
+
+  if(!stus.length){ $("seSheet").innerHTML='<div style="text-align:center;padding:48px;color:var(--t3);">此班尚無學生</div>'; return; }
+
+  $("seSheet").innerHTML=`
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>座號</th><th>姓名</th><th>分數 <span style="color:var(--t3);font-weight:400">/ ${asg.maxScore}</span></th><th>狀態</th></tr></thead>
+        <tbody>${stus.map(s=>{
+          const sc=scMap[s.id], has=sc!==undefined;
+          return `<tr>
+            <td class="mono" style="color:var(--t3);">${s.seat}</td>
+            <td><strong>${s.name}</strong></td>
+            <td><input class="si ${has?'filled':''}" type="number" data-sid="${s.id}"
+              min="0" max="${asg.maxScore}" value="${has?sc:''}" placeholder="—"
+              oninput="this.classList.toggle('filled',this.value!=='');calcAvg()"></td>
+            <td id="ss-${s.id}" style="font-size:12px;">${has?'<span style="color:var(--grn)">✓</span>':'<span style="color:var(--t3)">—</span>'}</td>
+          </tr>`;
+        }).join("")}</tbody>
+        <tfoot><tr>
+          <td colspan="2" style="text-align:right;">全班平均（已填）</td>
+          <td id="avgCell">—</td><td></td>
+        </tr></tfoot>
+      </table>
+    </div>`;
+  calcAvg();
+};
+
+window.calcAvg=()=>{
+  const vals=[...document.querySelectorAll(".si")].map(i=>i.value).filter(v=>v!=="").map(Number);
+  const c=$("avgCell"); if(!c) return;
+  c.textContent=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1):"—";
+};
+
+window.seSave=async()=>{
+  const asgId=$("seItem")?.value; if(!asgId){ toast("請選擇項目","err"); return; }
+  const batch=writeBatch(db); let n=0;
+  document.querySelectorAll(".si").forEach(inp=>{
+    if(inp.value==="") return;
+    const sid=inp.dataset.sid, score=parseFloat(inp.value);
+    batch.set(doc(db,"scores",`${asgId}_${sid}`),{assignmentId:asgId,studentId:sid,score,updatedAt:serverTimestamp()});
+    const ss=$(`ss-${sid}`); if(ss) ss.innerHTML='<span style="color:var(--grn)">✓</span>';
+    n++;
+  });
+  await batch.commit(); toast(`已儲存 ${n} 筆`);
+};
+
+/* ══════════════════ STUDENTS ══════════════════ */
+let editStuId=null;
+window.openStuModal=(id=null)=>{
+  editStuId=id;
+  $("stuMT").textContent=id?"編輯學生":"新增學生";
+  $("stuCls").innerHTML=classes.map(c=>`<option value="${c.name}">${c.name}</option>`).join("");
+  if(!id){ $("stuSeat").value=""; $("stuName2").value=""; }
+  $("M-stu").classList.remove("hidden");
+};
+window.saveStu=async()=>{
+  const cls=$("stuCls").value, seat=parseInt($("stuSeat").value), name=$("stuName2").value.trim();
+  if(!cls||!seat||!name){ toast("請填寫所有欄位","err"); return; }
+  const id=editStuId||`${cls}_${String(seat).padStart(2,"0")}`;
+  await setDoc(doc(db,"students",id),{class:cls,seat,name});
+  toast(editStuId?"已更新":"已新增 "+name); cm("M-stu");
+  await loadStuCache(); loadStuList();
+};
+window.deleteStu=async(id,name)=>{
+  if(!confirm(`刪除「${name}」？`)) return;
+  await deleteDoc(doc(db,"students",id));
+  toast("已刪除"); await loadStuCache(); loadStuList();
+};
+async function loadStuList(){
+  const fid=$("stuFilter")?.value;
+  const fcls=classes.find(c=>c.id===fid)?.name||"";
+  const q=fcls?query(collection(db,"students"),where("class","==",fcls),orderBy("seat")):query(collection(db,"students"),orderBy("seat"));
+  const snap=await getDocs(q);
+
+  const bSnap=await getDocs(collection(db,"bindings"));
+  const bMap={};
+  bSnap.forEach(d=>{ bMap[d.data().studentId]=d.data().email; });
+
+  const tbody=$("stuTbody");
+  if(snap.empty){ tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;color:var(--t3);padding:28px;">尚無學生</td></tr>`; return; }
+  tbody.innerHTML=snap.docs.map(d=>{
+    const s=d.data(), bound=bMap[d.id];
+    return `<tr>
+      <td class="mono" style="color:var(--t3);">${s.seat}</td>
+      <td><strong>${s.name}</strong></td>
+      <td><span class="badge bb">${s.class}</span></td>
+      <td>${bound?`<span class="badge bg">✓ 已綁定</span>`:`<span class="badge bgr">未綁定</span>`}</td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-xs" onclick="openStuModal('${d.id}')">編輯</button>
+        <button class="btn btn-danger btn-xs" onclick="deleteStu('${d.id}','${s.name}')">刪除</button>
+      </td>
+    </tr>`;
+  }).join("");
+}
+window.loadStuList=loadStuList;
+
+/* ══════════════════ IMPORT ══════════════════ */
+window.openImportModal=()=>{ $("importTxt").value=""; $("importResult").innerHTML=""; $("M-import").classList.remove("hidden"); };
+window.runImport=async()=>{
+  const lines=$("importTxt").value.trim().split("\n").filter(l=>l.trim());
+  if(!lines.length){ toast("請貼上名單","err"); return; }
+  const batch=writeBatch(db); let ok=0,fail=0,html="";
+  for(const line of lines){
+    const p=line.trim().split(/\s+/);
+    if(p.length<3){ html+=`<div style="color:var(--red)">✕ 格式錯誤：${line}</div>`; fail++; continue; }
+    const [seat,name,cls]=p, sn=parseInt(seat);
+    if(!sn||!name||!cls){ html+=`<div style="color:var(--red)">✕ 資料有誤：${line}</div>`; fail++; continue; }
+    batch.set(doc(db,"students",`${cls}_${String(sn).padStart(2,"0")}`),{class:cls,seat:sn,name});
+    html+=`<div style="color:var(--grn)">✓ ${cls} 第${sn}號 ${name}</div>`; ok++;
+  }
+  await batch.commit();
+  $("importResult").innerHTML=`<div style="margin-bottom:6px;color:var(--t1);">完成：✓${ok} ✕${fail}</div>`+html;
+  toast(`匯入 ${ok} 筆`); await loadStuCache(); loadStuList();
+};
+
+/* ══════════════════ BINDINGS ══════════════════ */
+async function loadBindList(){
+  const fid=$("bindFilter")?.value;
+  const fcls=classes.find(c=>c.id===fid)?.name||"";
+  const bSnap=await getDocs(collection(db,"bindings"));
+  const binds=bSnap.docs.map(d=>({uid:d.id,...d.data()}));
+  const filtered=fcls?binds.filter(b=>b.className===fcls):binds;
+
+  const tbody=$("bindTbody");
+  if(!filtered.length){ tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--t3);padding:28px;">尚無綁定資料</td></tr>`; return; }
+  tbody.innerHTML=filtered.map(b=>{
+    const dt=b.boundAt?.toDate?.()?.toLocaleDateString("zh-TW")||"—";
+    return `<tr>
+      <td class="mono" style="color:var(--t3);">${b.seat}</td>
+      <td><strong>${b.name}</strong></td>
+      <td><span class="badge bb">${b.className}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--acc2);">${b.email}</td>
+      <td style="color:var(--t3);font-size:12px;">${dt}</td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-xs" onclick="openRebind('${b.uid}','${b.email}')">修改</button>
+        <button class="btn btn-danger btn-xs" onclick="removeBind('${b.uid}','${b.name}')">移除</button>
+      </td>
+    </tr>`;
+  }).join("");
+}
+window.loadBindList=loadBindList;
+
+window.removeBind=async(uid,name)=>{
+  if(!confirm(`移除「${name}」的綁定？`)) return;
+  await deleteDoc(doc(db,"bindings",uid));
+  toast("已移除"); loadBindList(); loadStuList();
+};
+window.openRebind=(uid,email)=>{ $("rebindUid").value=uid; $("rebindEmail").value=email; $("M-rebind").classList.remove("hidden"); };
+window.saveRebind=async()=>{
+  const uid=$("rebindUid").value, email=$("rebindEmail").value.trim().toLowerCase();
+  if(!email){ toast("請輸入 Email","err"); return; }
+  const snap=await getDoc(doc(db,"bindings",uid));
+  if(!snap.exists()) return;
+  await setDoc(doc(db,"bindings",uid),{...snap.data(),email,updatedAt:serverTimestamp()});
+  toast("已更新"); cm("M-rebind"); loadBindList();
+};
 </script>
 </body>
 </html>
