@@ -149,7 +149,67 @@ tbody td{padding:15px 24px;font-size:14px;}
 .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
 
 /* ── Empty ── */
+.form-group textarea{width:100%;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:"Space Mono",monospace;outline:none;transition:border-color .18s;resize:vertical;line-height:1.7;}
+.form-group textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(240,192,64,.1);}
+.import-row{font-size:12px;font-family:"Space Mono",monospace;padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;}
+.import-row .ok{color:var(--pass);}
+.import-row .bad{color:var(--fail);}
 .empty{text-align:center;padding:48px 24px;color:var(--muted);font-size:13px;font-family:'Space Mono',monospace;letter-spacing:1px;}
+
+
+/* ════════════════════════════════════════════
+   BATCH IMPORT
+════════════════════════════════════════════ */
+window.openImport = () => {
+  $("importText").value = "";
+  $("importPreview").innerHTML = "";
+  $("importOverlay").classList.remove("hidden");
+};
+window.closeImport = () => $("importOverlay").classList.add("hidden");
+window.closeImportIfBg = e => { if(e.target===$("importOverlay")) closeImport(); };
+
+window.runImport = async () => {
+  const lines = $("importText").value.trim().split("
+").filter(l=>l.trim());
+  if (!lines.length) { showToast("請貼上學生名單","err"); return; }
+
+  const preview = $("importPreview");
+  preview.innerHTML = "<div style='font-size:12px;color:var(--muted);font-family:monospace;margin-bottom:8px;'>匯入中...</div>";
+
+  let ok=0, fail=0, html="";
+
+  for (const line of lines) {
+    // 支援空格或 tab 分隔，格式: 學號 姓名 班級 學期 @domain
+    const parts = line.trim().split(/\s+/);
+    if (parts.length < 5) {
+      html += `<div class="import-row"><span class="bad">✕</span> <span style="color:var(--muted)">${line} — 格式錯誤（需要5欄）</span></div>`;
+      fail++; continue;
+    }
+    const [stuId, name, cls, semester, domain] = parts;
+    const email = stuId + domain;
+    const docId = email.replace(/[^a-z0-9]/g,"_");
+    try {
+      await setDoc(doc(db,"students",docId), {
+        email: email.toLowerCase(), name, class: cls, semester, rank:"", subjects:[]
+      });
+      html += `<div class="import-row"><span class="ok">✓</span> ${name} — ${email}</div>`;
+      ok++;
+    } catch(e) {
+      html += `<div class="import-row"><span class="bad">✕</span> ${name} — ${e.message}</div>`;
+      fail++;
+    }
+  }
+
+  preview.innerHTML = `
+    <div style="font-size:13px;margin-bottom:10px;">
+      <span style="color:var(--pass)">✓ 成功 ${ok} 筆</span>
+      ${fail>0?`　<span style="color:var(--fail)">✕ 失敗 ${fail} 筆</span>`:""}
+    </div>
+    <div style="max-height:200px;overflow-y:auto;">${html}</div>
+    <div style="margin-top:14px;text-align:right;">
+      <button class="btn btn-primary" onclick="closeImport();loadAdminList();">完成</button>
+    </div>`;
+};
 
 /* ── Toast ── */
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:12px 22px;font-size:13px;font-family:'Space Mono',monospace;box-shadow:0 8px 32px rgba(0,0,0,.4);opacity:0;transition:all .3s;pointer-events:none;z-index:200;white-space:nowrap;}
@@ -231,6 +291,7 @@ footer{margin-top:48px;font-size:11px;color:var(--muted);font-family:'Space Mono
     <h2><img id="adminAvatar" src="" alt=""><span>成績管理</span><span class="admin-badge">ADMIN</span></h2>
     <div class="admin-actions">
       <button class="btn btn-primary" onclick="openModal()">＋ 新增學生</button>
+      <button class="btn btn-secondary" onclick="openImport()">📋 批次匯入</button>
       <button class="btn btn-ghost" onclick="doSignOut()">登　出</button>
     </div>
   </div>
@@ -238,6 +299,26 @@ footer{margin-top:48px;font-size:11px;color:var(--muted);font-family:'Space Mono
 </div>
 
 </div><!-- /shell -->
+
+<!-- ══ Import Modal ══ -->
+<div class="modal-overlay hidden" id="importOverlay" onclick="closeImportIfBg(event)">
+  <div class="modal">
+    <h3>📋 批次匯入學生</h3>
+    <p style="color:var(--muted);font-size:13px;line-height:1.8;margin-bottom:16px;">
+      每行一筆，格式：<span style="color:var(--accent);font-family:monospace">學號 姓名 班級 學期 Email網域</span><br>
+      例：<span style="color:var(--accent2);font-family:monospace">1310402 吳宥磬 804 113-2 @tpjh.kh.edu.tw</span>
+    </p>
+    <div class="form-group">
+      <label>貼上學生名單</label>
+      <textarea id="importText" rows="10" placeholder="1310402 吳宥磬 804 113-2 @tpjh.kh.edu.tw&#10;1310403 林羿宇 804 113-2 @tpjh.kh.edu.tw&#10;..."></textarea>
+    </div>
+    <div id="importPreview" style="margin-top:12px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeImport()">取　消</button>
+      <button class="btn btn-primary" onclick="runImport()">開始匯入</button>
+    </div>
+  </div>
+</div>
 
 <!-- ══ Modal ══ -->
 <div class="modal-overlay hidden" id="modalOverlay" onclick="closeModalIfBg(event)">
@@ -297,7 +378,7 @@ const FIREBASE_CONFIG = {
 
 /* ★ 把這裡改成你自己的 Google email，登入後就會看到管理介面 */
 const ADMIN_EMAILS = [
-  "019@tpjh.kh.edu.tw"    // ← 改成你的 email！
+  "teacher@gmail.com"    // ← 改成你的 email！
 ];
 
 const app      = initializeApp(FIREBASE_CONFIG);
@@ -472,6 +553,61 @@ window.saveStudent = async () => {
   showToast(`已儲存 ${name}`,"ok");
   closeModal();
   loadAdminList();
+};
+
+
+/* ════════════════════════════════════════════
+   BATCH IMPORT
+════════════════════════════════════════════ */
+window.openImport = () => {
+  $("importText").value = "";
+  $("importPreview").innerHTML = "";
+  $("importOverlay").classList.remove("hidden");
+};
+window.closeImport = () => $("importOverlay").classList.add("hidden");
+window.closeImportIfBg = e => { if(e.target===$("importOverlay")) closeImport(); };
+
+window.runImport = async () => {
+  const lines = $("importText").value.trim().split("
+").filter(l=>l.trim());
+  if (!lines.length) { showToast("請貼上學生名單","err"); return; }
+
+  const preview = $("importPreview");
+  preview.innerHTML = "<div style='font-size:12px;color:var(--muted);font-family:monospace;margin-bottom:8px;'>匯入中...</div>";
+
+  let ok=0, fail=0, html="";
+
+  for (const line of lines) {
+    // 支援空格或 tab 分隔，格式: 學號 姓名 班級 學期 @domain
+    const parts = line.trim().split(/\s+/);
+    if (parts.length < 5) {
+      html += `<div class="import-row"><span class="bad">✕</span> <span style="color:var(--muted)">${line} — 格式錯誤（需要5欄）</span></div>`;
+      fail++; continue;
+    }
+    const [stuId, name, cls, semester, domain] = parts;
+    const email = stuId + domain;
+    const docId = email.replace(/[^a-z0-9]/g,"_");
+    try {
+      await setDoc(doc(db,"students",docId), {
+        email: email.toLowerCase(), name, class: cls, semester, rank:"", subjects:[]
+      });
+      html += `<div class="import-row"><span class="ok">✓</span> ${name} — ${email}</div>`;
+      ok++;
+    } catch(e) {
+      html += `<div class="import-row"><span class="bad">✕</span> ${name} — ${e.message}</div>`;
+      fail++;
+    }
+  }
+
+  preview.innerHTML = `
+    <div style="font-size:13px;margin-bottom:10px;">
+      <span style="color:var(--pass)">✓ 成功 ${ok} 筆</span>
+      ${fail>0?`　<span style="color:var(--fail)">✕ 失敗 ${fail} 筆</span>`:""}
+    </div>
+    <div style="max-height:200px;overflow-y:auto;">${html}</div>
+    <div style="margin-top:14px;text-align:right;">
+      <button class="btn btn-primary" onclick="closeImport();loadAdminList();">完成</button>
+    </div>`;
 };
 
 /* ── Toast ── */
