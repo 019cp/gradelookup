@@ -661,17 +661,22 @@ window.seLoadItems=async()=>{
 
 function renderSeClassBtns(){
   const wrap=$("seClassBtns"); if(!wrap) return;
-  wrap.innerHTML=classes.map((c,i)=>`
-    <button class="btn ${i===0?'active':''}"
-      style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;padding:9px 22px;border-radius:20px;border:2px solid ${i===0?'var(--acc)':\'var(--b2)\'};background:${i===0?'rgba(59,130,246,.12)':\'transparent\'};color:${i===0?'var(--acc)':\'var(--t2)\'};cursor:pointer;transition:all .15s;"
-      onclick="seSelectClass('${c.name}',this)"
-      onmouseover="if(!this.classList.contains('active')){this.style.borderColor='var(--b3)';this.style.color='var(--t1)';}"
-      onmouseout="if(!this.classList.contains('active')){this.style.borderColor='var(--b2)';this.style.color='var(--t2)';}"
-    >${c.name}</button>`).join("");
-  // auto-trigger first class
+  wrap.innerHTML = classes.map((cls, i) => {
+    const isActive = i === 0;
+    const border = isActive ? "var(--acc)" : "var(--b2)";
+    const bg     = isActive ? "rgba(59,130,246,.12)" : "transparent";
+    const color  = isActive ? "var(--acc)" : "var(--t2)";
+    const active = isActive ? " active" : "";
+    return '<button class="btn' + active + '" '
+      + 'style="font-size:14px;font-weight:700;font-family:JetBrains Mono,monospace;'
+      + 'padding:9px 22px;border-radius:20px;border:2px solid ' + border + ';'
+      + 'background:' + bg + ';color:' + color + ';cursor:pointer;transition:all .15s;" '
+      + 'onclick="seSelectClass(\'' + cls.name + '\',this)">'
+      + cls.name + '</button>';
+  }).join("");
   if(classes.length){
-    seCurrentClass=classes[0].name;
-    const firstBtn=wrap.querySelector("button");
+    seCurrentClass = classes[0].name;
+    const firstBtn = wrap.querySelector("button");
     if(firstBtn) seSelectClass(classes[0].name, firstBtn);
   }
 }
