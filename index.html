@@ -224,8 +224,11 @@ tfoot td{padding:11px 14px;font-size:13px;background:var(--s2);border-top:2px so
       <!-- PAGE: 全班成績輸入 -->
       <div class="page active" id="page-scoreEntry">
         <div class="ph"><div class="ph-left"><h2>📊 全班成績輸入</h2><p>選擇班級與項目，填入每位學生分數</p></div></div>
+        <div style="margin-bottom:16px;">
+          <div style="font-size:11px;letter-spacing:2px;color:var(--t3);font-family:'JetBrains Mono',monospace;margin-bottom:8px;">選擇班級</div>
+          <div id="seClassBtns" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+        </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;">
-          <div class="fg" style="min-width:110px;"><label>班級</label><select id="seClass" onchange="seLoadItems()"></select></div>
           <div class="fg" style="min-width:200px;"><label>作業 / 考試項目</label><select id="seItem" onchange="seLoadSheet()"></select></div>
           <button class="btn btn-primary" onclick="seSave()">💾 儲存全班成績</button>
         </div>
@@ -455,8 +458,7 @@ async function loadStuCache(){
 function populateSelects(){
   const allOpt = `<option value="">全部班級</option>`;
   const opts = classes.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
-  // score entry
-  if($("seClass")) $("seClass").innerHTML = opts;
+  // score entry class buttons — rendered in renderSeClassBtns()
   // assignment modal
   if($("asgClass")) $("asgClass").innerHTML = classes.map(c=>`<option value="${c.name}">${c.name}</option>`).join("");
   // student modal
@@ -635,21 +637,48 @@ async function loadAsgList(){
 window.loadAsgList=loadAsgList;
 
 /* ══════════════════ SCORE ENTRY ══════════════════ */
-window.seLoadItems=async()=>{
-  const cid=$("seClass")?.value;
-  const cls=classes.find(c=>c.id===cid)?.name||"";
+let seCurrentClass = "";
+
+window.seSelectClass = async(name, el) => {
+  seCurrentClass = name;
+  document.querySelectorAll("#seClassBtns button").forEach(b=>b.classList.remove("active"));
+  el.classList.add("active");
   const sel=$("seItem"); if(!sel) return;
-  if(!cls){ sel.innerHTML='<option>請選班級</option>'; return; }
-  const snap=await getDocs(query(collection(db,"assignments"),where("class","==",cls)));
-  if(snap.empty){ sel.innerHTML='<option>此班尚無項目</option>'; $("seSheet").innerHTML='<div style="text-align:center;padding:48px;color:var(--t3);">請先在「作業管理」新增項目</div>'; return; }
+  const snap=await getDocs(query(collection(db,"assignments"),where("class","==",name)));
+  if(snap.empty){
+    sel.innerHTML='<option>此班尚無項目</option>';
+    $("seSheet").innerHTML='<div style="text-align:center;padding:48px;color:var(--t3);">請先在「作業管理」新增項目</div>';
+    return;
+  }
   sel.innerHTML=snap.docs.map(d=>`<option value="${d.id}">${d.data().name}（${TYPE_LBL[d.data().type]}）</option>`).join("");
   seLoadSheet();
 };
 
+window.seLoadItems=async()=>{
+  // called on page nav — auto-select first class
+  renderSeClassBtns();
+};
+
+function renderSeClassBtns(){
+  const wrap=$("seClassBtns"); if(!wrap) return;
+  wrap.innerHTML=classes.map((c,i)=>`
+    <button class="btn ${i===0?'active':''}"
+      style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;padding:9px 22px;border-radius:20px;border:2px solid ${i===0?'var(--acc)':\'var(--b2)\'};background:${i===0?'rgba(59,130,246,.12)':\'transparent\'};color:${i===0?'var(--acc)':\'var(--t2)\'};cursor:pointer;transition:all .15s;"
+      onclick="seSelectClass('${c.name}',this)"
+      onmouseover="if(!this.classList.contains('active')){this.style.borderColor='var(--b3)';this.style.color='var(--t1)';}"
+      onmouseout="if(!this.classList.contains('active')){this.style.borderColor='var(--b2)';this.style.color='var(--t2)';}"
+    >${c.name}</button>`).join("");
+  // auto-trigger first class
+  if(classes.length){
+    seCurrentClass=classes[0].name;
+    const firstBtn=wrap.querySelector("button");
+    if(firstBtn) seSelectClass(classes[0].name, firstBtn);
+  }
+}
+
 window.seLoadSheet=async()=>{
   const asgId=$("seItem")?.value;
-  const cid=$("seClass")?.value;
-  const cls=classes.find(c=>c.id===cid)?.name||"";
+  const cls=seCurrentClass||"";
   if(!asgId||!cls) return;
   const asg=(await getDoc(doc(db,"assignments",asgId))).data();
   if(!asg) return;
@@ -694,7 +723,8 @@ window.calcAvg=()=>{
 };
 
 window.seSave=async()=>{
-  const asgId=$("seItem")?.value; if(!asgId){ toast("請選擇項目","err"); return; }
+  const asgId=$("seItem")?.value;
+  if(!asgId||!seCurrentClass){ toast("請先選擇班級與項目","err"); return; }
   const batch=writeBatch(db); let n=0;
   document.querySelectorAll(".si").forEach(inp=>{
     if(inp.value==="") return;
