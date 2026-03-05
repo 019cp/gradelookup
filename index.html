@@ -443,13 +443,13 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
 
 <div class="toast" id="toast"></div>
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbOut, onAuthStateChanged }
-  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+  from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import {
   getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc,
   query, where, orderBy, serverTimestamp, writeBatch
-} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 const FB = {
   apiKey:"AIzaSyC0AF7-_ZzkeiInZRacvEtxSG8vVBloRFM",
@@ -958,15 +958,15 @@ async function showStudentView(user, binding){
     if(periodScore!==null){ totalRegScore+=periodScore; regCount++; }
     if(examScore!==null){ totalExamScore+=examScore; examCount++; }
 
-    const pColor = periodScore!==null ? scoreColor(periodScore,100) : "var(--t3)";
-    const eColor = examScore!==null   ? scoreColor(examScore,100)   : "var(--t3)";
+    const pColor = periodScore!==null ? scoreColor(periodScore) : "var(--t3)";
+    const eColor = examScore!==null   ? scoreColor(examScore)   : "var(--t3)";
 
     const hwRows = items.map((item,i)=>{
       const v = hwScores[i];
       const has = v!==undefined && v!=="" && v!==null;
       return '<tr><td>'+escHtml(item.name)+'</td>'
         +'<td style="font-size:11px;color:var(--t3);">'+item.weight+'%</td>'
-        +'<td class="mono" style="font-weight:600;color:'+(has?scoreColor(v,100):"var(--t3)")+';">'+(has?v:"—")+'</td></tr>';
+        +'<td class="mono" style="font-weight:600;color:'+(has?scoreColor(v):"var(--t3)")+';">'+(has?v:"—")+'</td></tr>';
     }).join("");
 
     periodsHtml.push(
@@ -993,10 +993,7 @@ async function showStudentView(user, binding){
   $("stuPeriods").innerHTML = periodsHtml.join("");
 }
 
-function scoreColor(v, max){
-  const p = v/max;
-  return p>=0.8?"var(--grn)":p>=0.6?"var(--ylw)":"var(--red)";
-}
+// scoreColor already defined above
 
 /* ══════════════════ BINDING ══════════════════ */
 async function getBinding(uid){
