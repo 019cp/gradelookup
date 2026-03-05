@@ -176,6 +176,47 @@ tfoot td{padding:10px 12px;font-size:12px;background:var(--s3);border-top:2px so
   .main{margin-left:0;}
   .stu-summary{grid-template-columns:1fr 1fr;}
 }
+
+/* ── EXCEL GRADE TABLE ── */
+.grade-scroll{overflow-x:auto;border:1px solid var(--b1);border-radius:var(--rs);}
+.excel-tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.excel-tbl th{padding:9px 10px;text-align:center;font-size:11px;letter-spacing:1px;font-weight:600;white-space:nowrap;border-right:1px solid rgba(255,255,255,.06);position:sticky;top:0;z-index:2;}
+.excel-tbl td{padding:0;border-top:1px solid var(--b1);border-right:1px solid rgba(255,255,255,.04);text-align:center;vertical-align:middle;}
+.excel-tbl tr:hover td{filter:brightness(1.08);}
+/* sticky left cols */
+.col-seat{width:52px;min-width:52px;position:sticky;left:0;z-index:3;}
+.col-name{width:80px;min-width:80px;position:sticky;left:52px;z-index:3;}
+.col-total{position:sticky;right:0;z-index:3;}
+th.col-seat,th.col-name{background:#1e293b;text-align:left;padding-left:10px;}
+td.col-seat{background:#1a2236;color:var(--t3);font-family:'JetBrains Mono',monospace;font-size:12px;padding:10px;text-align:center;}
+td.col-name{background:#1c2640;font-weight:600;padding:10px 8px;text-align:left;}
+/* reg cols (homework) – white-ish */
+th.reg-col{background:#1e3a5f;color:#93c5fd;}
+td.reg-col{background:#172035;}
+/* subtotal col – blue */
+th.sub-col{background:#1e3a8a;color:#bfdbfe;}
+td.sub-col{background:#1a2d6b;font-weight:700;color:#93c5fd;font-family:'JetBrains Mono',monospace;padding:10px 8px;}
+/* exam col – green */
+th.exam-col{background:#14532d;color:#86efac;}
+td.exam-col{background:#0f2d1c;}
+/* total col – amber */
+th.col-total{background:#78350f;color:#fcd34d;text-align:center;}
+td.col-total{background:#2d1f0a;font-weight:700;color:#fcd34d;font-family:'JetBrains Mono',monospace;padding:10px 8px;}
+/* avg row */
+tr.avg-row td{background:#1e2a3a!important;color:var(--acc2);font-weight:700;font-family:'JetBrains Mono',monospace;font-size:12px;border-top:2px solid var(--b2);}
+tr.avg-row td.col-seat,tr.avg-row td.col-name{background:#1a2336!important;color:var(--t2);}
+/* grade cell input */
+.gc{width:58px;padding:7px 4px;background:transparent;border:none;color:var(--t1);font-size:13px;font-family:'JetBrains Mono',monospace;text-align:center;outline:none;display:block;margin:0 auto;}
+.gc:focus{background:rgba(59,130,246,.18);border-radius:4px;}
+.gc.has-val{color:var(--t1);}
+td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
+/* period header bar */
+.period-header-bar{padding:7px 14px;border:1px solid var(--b1);border-bottom:none;border-radius:var(--rs) var(--rs) 0 0;background:rgba(59,130,246,.06);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.hw-chip{background:rgba(59,130,246,.12);color:#93c5fd;border-radius:4px;padding:2px 9px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;}
+/* semester total tab */
+.sem-tab{display:none;}
+.sem-tab.active{display:block;}
+
 </style>
 </head>
 <body>
@@ -271,13 +312,9 @@ tfoot td{padding:10px 12px;font-size:12px;background:var(--s3);border-top:2px so
           <div class="ptab active" data-period="1" onclick="scoreSelectPeriod(1,this)">第一次平時＋定期</div>
           <div class="ptab" data-period="2" onclick="scoreSelectPeriod(2,this)">第二次平時＋定期</div>
           <div class="ptab" data-period="3" onclick="scoreSelectPeriod(3,this)">第三次平時＋定期</div>
+          <div class="ptab" data-period="0" onclick="scoreSelectPeriod(0,this)">📊 學期總分</div>
         </div>
-        <!-- Weight bar -->
-        <div class="weight-bar" id="scoreWeightBar">
-          <div class="wb-seg w-reg"><span class="wval" id="wRegPct">20%</span><span class="wlbl">本次平時</span></div>
-          <div class="wb-seg w-exam"><span class="wval">13.3%</span><span class="wlbl">本次定期考</span></div>
-          <div class="wb-seg w-total"><span class="wval">33.3%</span><span class="wlbl">本次合計</span></div>
-        </div>
+        <!-- weight bar removed, now inline in table -->
         <div id="scoreSheetWrap"></div>
       </div>
 
@@ -500,6 +537,7 @@ window.renderClsBtns = renderClsBtns;
 /* ══════════════════ SCORE ENTRY ══════════════════ */
 let scoreCurrentClass = "";
 let scoreCurrentPeriod = 1;
+let _scoreItems = []; // cache items for current view
 
 window.scoreSelectClass = (name, el) => {
   scoreCurrentClass = name;
@@ -511,195 +549,256 @@ window.scoreSelectPeriod = (period, el) => {
   scoreCurrentPeriod = period;
   document.querySelectorAll("#scorePeriodTabs .ptab").forEach(b=>b.classList.remove("active"));
   el.classList.add("active");
-  renderScoreSheet();
+  if(period===0) renderSemesterSheet();
+  else renderScoreSheet();
 };
+
+/* ── helpers ── */
+function scoreColor(v){return v>=80?"var(--grn)":v>=60?"var(--ylw)":"var(--red)";}
+function fmtScore(v){return v!==null&&v!==undefined&&v!==""?'<span style="color:'+scoreColor(Number(v))+'">'+Number(v).toFixed(Number.isInteger(Number(v))?0:1)+'</span>':"<span style='color:var(--t3)'>—</span>";}
+function calcPeriodScore(hwScores, items){
+  let ws=0,wss=0;
+  items.forEach((it,i)=>{const v=hwScores[i];if(v!==undefined&&v!==""&&v!==null){wss+=Number(v)*Number(it.weight);ws+=Number(it.weight);}});
+  return ws>0?wss/100:null;
+}
 
 async function renderScoreSheet(){
-  const cls = scoreCurrentClass, period = scoreCurrentPeriod;
+  const cls=scoreCurrentClass, period=scoreCurrentPeriod;
   if(!cls) return;
-  const wrap = $("scoreSheetWrap");
-  wrap.innerHTML = '<div style="text-align:center;padding:40px;color:var(--t3);">載入中...</div>';
+  const wrap=$("scoreSheetWrap");
+  wrap.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);">載入中...</div>';
 
-  // load period config (homework items + weights)
-  const cfgSnap = await getDoc(doc(db,"periodConfig",cls+"_"+period));
-  const cfg = cfgSnap.exists() ? cfgSnap.data() : {items:[]};
-  const items = cfg.items || [];
+  const [cfgSnap, stuSnap, scSnap] = await Promise.all([
+    getDoc(doc(db,"periodConfig",cls+"_"+period)),
+    getDocs(query(collection(db,"students"),where("class","==",cls),orderBy("seat"))),
+    getDocs(query(collection(db,"scores"),where("class","==",cls),where("period","==",period)))
+  ]);
 
-  // load students
-  const stuSnap = await getDocs(query(collection(db,"students"),where("class","==",cls),orderBy("seat")));
+  const items = cfgSnap.exists()?(cfgSnap.data().items||[]):[];
+  _scoreItems = items;
   const stus = stuSnap.docs.map(d=>({id:d.id,...d.data()}));
-  if(!stus.length){ wrap.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);">此班尚無學生，請先至「學生名單」新增</div>'; return; }
+  if(!stus.length){wrap.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);">此班尚無學生，請先至「學生名單」新增</div>';return;}
 
-  // load existing scores for this class+period
-  const scSnap = await getDocs(query(collection(db,"scores"),where("class","==",cls),where("period","==",period)));
-  const scMap = {}; // studentId -> {exam, hw:{itemIdx:score}}
-  scSnap.forEach(d=>{ scMap[d.data().studentId] = d.data(); });
-
-  // build table
-  const hwCols = items.map((item,i)=>'<th title="比重 '+item.weight+'%">'+item.name+'<br><span style="color:var(--t3);font-size:10px;">'+item.weight+'%</span></th>').join("");
-  const hwTotal = items.reduce((s,it)=>s+Number(it.weight),0);
-
-  let rows = stus.map(s=>{
-    const sc = scMap[s.id] || {};
-    const hwScores = sc.hw || {};
-    const examVal = sc.exam !== undefined ? sc.exam : "";
-
-    // calc current period score for display
-    let periodScore = null;
-    if(items.length){
-      let wsum=0, wscoresum=0;
-      items.forEach((item,i)=>{
-        const v = hwScores[i];
-        if(v !== undefined && v !== null && v !== ""){
-          wscoresum += Number(v) * Number(item.weight);
-          wsum += Number(item.weight);
-        }
-      });
-      if(wsum>0) periodScore = (wscoresum/100).toFixed(1);
-    }
-    const examScore = examVal !== "" ? Number(examVal) : null;
-    const periodDisp = periodScore !== null ? '<span class="score-num '+scoreClass(periodScore,100)+'">'+periodScore+'</span>' : '<span class="score-num none">—</span>';
-    const examDisp   = examScore  !== null ? '<span class="score-num '+scoreClass(examScore,100)+'">'+examScore+'</span>' : '<span class="score-num none">—</span>';
-
-    const hwCells = items.map((item,i)=>{
-      const v = hwScores[i] !== undefined ? hwScores[i] : "";
-      return '<td><input class="si hw-input'+(v!==""?" filled":"")+(Number(item.weight)===0?" err":"")+'" type="number" min="0" max="100" data-sid="'+s.id+'" data-idx="'+i+'" value="'+v+'" placeholder="—" oninput="onScoreInput(this)"></td>';
-    }).join("");
-
-    return '<tr id="srow-'+s.id+'">'
-      +'<td class="mono" style="color:var(--t3)">'+s.seat+'</td>'
-      +'<td><strong>'+s.name+'</strong></td>'
-      +hwCells
-      +'<td id="pdisp-'+s.id+'">'+periodDisp+'</td>'
-      +'<td><input class="si exam-input'+(examVal!==""?" filled":"")+'" type="number" min="0" max="100" data-sid="'+s.id+'" value="'+examVal+'" placeholder="—" oninput="onExamInput(this)"></td>'
-      +'<td id="edisp-'+s.id+'">'+examDisp+'</td>'
-      +'</tr>';
-  }).join("");
-
-  // avg footer
-  const avgHwCells = items.map(()=>'<td id="avg-hw-'+Math.random().toString(36).slice(2)+'">—</td>').join("");
-
-  wrap.innerHTML = '<div class="tbl-wrap"><table>'
-    +'<thead><tr>'
-    +'<th>座號</th><th>姓名</th>'
-    +hwCols
-    +'<th style="color:var(--acc);">平時分<br><span style="font-size:10px;font-weight:400;">（加權）</span></th>'
-    +'<th style="color:var(--red);">定期考<br><span style="font-size:10px;font-weight:400;">/ 100</span></th>'
-    +'<th></th>'
-    +'</tr></thead>'
-    +'<tbody>'+rows+'</tbody>'
-    +'<tfoot><tr class="avg-foot">'
-    +'<td colspan="2" style="text-align:right;color:var(--t2);">全班平均</td>'
-    +items.map((_,i)=>'<td id="avgHw'+i+'">—</td>').join("")
-    +'<td id="avgPeriod">—</td>'
-    +'<td id="avgExam">—</td>'
-    +'<td></td>'
-    +'</tr></tfoot>'
-    +'</table></div>'
-    +'<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;">'
-    +'<button class="btn btn-primary" onclick="saveAllScores()">💾 儲存全班成績</button>'
-    +'</div>';
+  const scMap={};
+  scSnap.forEach(d=>{scMap[d.data().studentId]=d.data();});
 
   if(!items.length){
-    wrap.innerHTML = '<div style="text-align:center;padding:40px;color:var(--t3);">'
-      +'尚未設定平時成績項目<br><button class="btn btn-ghost" style="margin-top:12px;" onclick="navTo(\'periods\')">前往設定</button></div>';
+    wrap.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);">尚未設定平時成績項目<br><button class="btn btn-ghost" style="margin-top:12px;" onclick="navTo(\'periods\')">→ 前往設定</button></div>';
+    return;
   }
-  calcAllAvg(items);
-}
 
-function scoreClass(v, max){
-  const p = v/max;
-  return p>=0.8?"high":p>=0.6?"mid":"low";
-}
+  // ── header bar ──
+  const hwChips = items.map(it=>'<span class="hw-chip">'+it.name+' <span style="opacity:.6">'+it.weight+'%</span></span>').join("");
+  const headerBar = '<div class="period-header-bar">'
+    +'<span style="font-size:11px;color:var(--t2);font-weight:600;">📋 平時細項：</span>'
+    +hwChips
+    +'<button class="btn btn-ghost btn-sm" style="margin-left:4px;font-size:11px;" onclick="navTo(\'periods\')">＋ 編輯作業</button>'
+    +'<button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="saveAllScores()">💾 儲存全班成績</button>'
+    +'</div>';
 
-window.onScoreInput = (el) => {
-  el.classList.toggle("filled", el.value!=="");
-  const sid = el.dataset.sid;
-  recalcPeriodDisplay(sid);
-  calcAllAvg(null); // lazy recalc
-};
-window.onExamInput = (el) => {
-  el.classList.toggle("filled", el.value!=="");
-  const sid = el.dataset.sid;
-  const v = el.value !== "" ? Number(el.value) : null;
-  const disp = $("edisp-"+sid);
-  if(disp) disp.innerHTML = v!==null ? '<span class="score-num '+scoreClass(v,100)+'">'+v+'</span>' : '<span class="score-num none">—</span>';
-  calcAllAvg(null);
-};
+  // ── thead ──
+  let thead = '<tr>'
+    +'<th class="col-seat reg-col" style="background:#1e293b;color:var(--t2);">座號</th>'
+    +'<th class="col-name reg-col" style="background:#1e293b;color:var(--t2);">姓名</th>';
+  items.forEach(it=>{ thead+='<th class="reg-col">'+it.name+'<br><small style="opacity:.65;font-weight:400;">'+it.weight+'%</small></th>'; });
+  thead+='<th class="sub-col">平時小計<br><small style="opacity:.65;font-weight:400;">20%</small></th>';
+  thead+='<th class="exam-col">定期考<br><small style="opacity:.65;font-weight:400;">13.3%</small></th>';
+  thead+='<th class="col-total">第'+period+'次總分</th>';
+  thead+='</tr>';
 
-async function recalcPeriodDisplay(sid){
-  const cfgSnap = await getDoc(doc(db,"periodConfig",scoreCurrentClass+"_"+scoreCurrentPeriod));
-  const items = cfgSnap.exists() ? (cfgSnap.data().items||[]) : [];
-  const inputs = document.querySelectorAll('.hw-input[data-sid="'+sid+'"]');
-  let wsum=0, wscoresum=0;
-  inputs.forEach(inp=>{
-    const idx = parseInt(inp.dataset.idx);
-    const item = items[idx];
-    if(!item) return;
-    const v = inp.value;
-    if(v!==""){
-      wscoresum += Number(v)*Number(item.weight);
-      wsum += Number(item.weight);
-    }
+  // ── rows ──
+  const totalCols = items.length + 3; // hw + subtotal + exam + total (total is sticky so nav skips it)
+  let rows="";
+  stus.forEach((s,rowIdx)=>{
+    const sc=scMap[s.id]||{}, hw=sc.hw||{};
+    const examVal=sc.exam!==undefined&&sc.exam!==null?sc.exam:"";
+    const pScore=calcPeriodScore(hw,items);
+    const tScore=pScore!==null&&examVal!==""?(pScore*0.6+Number(examVal)*0.4):null; // simplified display
+
+    let hwCells="";
+    items.forEach((it,ci)=>{
+      const v=hw[ci]!==undefined?hw[ci]:"";
+      hwCells+='<td class="reg-col"><input class="gc" type="number" min="0" max="100"'
+        +' data-sid="'+s.id+'" data-idx="'+ci+'" data-row="'+rowIdx+'" data-col="'+ci+'" data-totalcols="'+totalCols+'"'
+        +' value="'+v+'" placeholder=""'
+        +' oninput="onGcInput(this)"'
+        +' onkeydown="onGcKey(event,this)"></td>';
+    });
+
+    const examColIdx=items.length+1;
+    rows+='<tr id="srow-'+s.id+'">'
+      +'<td class="col-seat">'+String(s.seat).padStart(2,"0")+'</td>'
+      +'<td class="col-name">'+s.name+'</td>'
+      +hwCells
+      +'<td class="sub-col" id="pdisp-'+s.id+'">'+fmtScore(pScore)+'</td>'
+      +'<td class="exam-col"><input class="gc" type="number" min="0" max="100"'
+        +' data-sid="'+s.id+'" data-exam="1" data-row="'+rowIdx+'" data-col="'+examColIdx+'" data-totalcols="'+totalCols+'"'
+        +' value="'+examVal+'" placeholder=""'
+        +' oninput="onGcInput(this)"'
+        +' onkeydown="onGcKey(event,this)"></td>'
+      +'<td class="col-total" id="tdisp-'+s.id+'">'+fmtScore(pScore!==null&&examVal!==""?(pScore*0.6+Number(examVal)*0.4):null)+'</td>'
+      +'</tr>';
   });
-  const disp = $("pdisp-"+sid);
-  if(!disp) return;
-  if(wsum>0){
-    const score = (wscoresum/100).toFixed(1);
-    disp.innerHTML = '<span class="score-num '+scoreClass(score,100)+'">'+score+'</span>';
-  } else {
-    disp.innerHTML = '<span class="score-num none">—</span>';
-  }
+
+  // ── avg row ──
+  let avgCells="";
+  items.forEach((_,i)=>{avgCells+='<td id="avgHw'+i+'" class="reg-col">—</td>';});
+  avgCells+='<td id="avgPeriod" class="sub-col">—</td>';
+  avgCells+='<td id="avgExam" class="exam-col">—</td>';
+  avgCells+='<td id="avgTotal" class="col-total">—</td>';
+
+  wrap.innerHTML = headerBar
+    +'<div class="grade-scroll"><table class="excel-tbl">'
+    +'<thead>'+thead+'</thead>'
+    +'<tbody>'+rows+'</tbody>'
+    +'<tfoot><tr class="avg-row">'
+    +'<td class="col-seat">—</td><td class="col-name" style="text-align:left;padding-left:10px;">全班平均</td>'
+    +avgCells
+    +'</tr></tfoot>'
+    +'</table></div>';
+
+  calcAllAvg();
 }
+
+/* ── 학期總分 sheet ── */
+async function renderSemesterSheet(){
+  const cls=scoreCurrentClass;
+  if(!cls) return;
+  const wrap=$("scoreSheetWrap");
+  wrap.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);">計算中...</div>';
+
+  const stuSnap=await getDocs(query(collection(db,"students"),where("class","==",cls),orderBy("seat")));
+  const stus=stuSnap.docs.map(d=>({id:d.id,...d.data()}));
+  if(!stus.length){wrap.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);">尚無學生</div>';return;}
+
+  // load all 3 periods scores + configs
+  const allData=await Promise.all([1,2,3].map(async p=>{
+    const [cfg,sc]=await Promise.all([
+      getDoc(doc(db,"periodConfig",cls+"_"+p)),
+      getDocs(query(collection(db,"scores"),where("class","==",cls),where("period","==",p)))
+    ]);
+    const items=cfg.exists()?(cfg.data().items||[]):[];
+    const scMap={};
+    sc.forEach(d=>{scMap[d.data().studentId]=d.data();});
+    return {items,scMap};
+  }));
+
+  const pLabel=["第一次","第二次","第三次"];
+  let thead='<tr><th class="col-seat" style="background:#1e293b;color:var(--t2);">座號</th><th class="col-name" style="background:#1e293b;color:var(--t2);">姓名</th>';
+  [0,1,2].forEach(i=>{thead+='<th class="sub-col">'+pLabel[i]+'小計<br><small style="opacity:.65;font-weight:400;">平時+定期</small></th>';});
+  thead+='<th class="col-total">學期總分</th></tr>';
+
+  let rows="", semTotals=[];
+  stus.forEach(s=>{
+    const scores=[0,1,2].map(i=>{
+      const {items,scMap}=allData[i];
+      const sc=scMap[s.id]||{};
+      const pScore=calcPeriodScore(sc.hw||{},items);
+      const eVal=sc.exam!==undefined&&sc.exam!==null?sc.exam:null;
+      return (pScore!==null&&eVal!==null)?(pScore*0.6+Number(eVal)*0.4):null;
+    });
+    const validScores=scores.filter(s=>s!==null);
+    const semScore=validScores.length===3?(validScores.reduce((a,b)=>a+b,0)/3):null;
+    semTotals.push(semScore);
+    rows+='<tr>'
+      +'<td class="col-seat">'+String(s.seat).padStart(2,"0")+'</td>'
+      +'<td class="col-name">'+s.name+'</td>'
+      +scores.map(sc=>'<td class="sub-col">'+fmtScore(sc)+'</td>').join("")
+      +'<td class="col-total">'+fmtScore(semScore)+'</td>'
+      +'</tr>';
+  });
+  const validSem=semTotals.filter(s=>s!==null);
+  const avgSem=validSem.length?(validSem.reduce((a,b)=>a+b,0)/validSem.length).toFixed(1):"—";
+
+  wrap.innerHTML='<div class="grade-scroll"><table class="excel-tbl">'
+    +'<thead>'+thead+'</thead><tbody>'+rows+'</tbody>'
+    +'<tfoot><tr class="avg-row">'
+    +'<td class="col-seat">—</td><td class="col-name" style="text-align:left;padding-left:10px;">全班平均</td>'
+    +'<td class="sub-col">—</td><td class="sub-col">—</td><td class="sub-col">—</td>'
+    +'<td class="col-total">'+avgSem+'</td>'
+    +'</tr></tfoot></table></div>';
+}
+
+/* ── input handlers ── */
+window.onGcInput = (el) => {
+  const sid=el.dataset.sid;
+  if(el.dataset.exam){
+    // update total display
+    const pCell=$("pdisp-"+sid);
+    const pScore=pCell?parseFloat(pCell.querySelector("[style]")?.textContent)||null:null;
+    const eVal=el.value!==""?Number(el.value):null;
+    const tCell=$("tdisp-"+sid);
+    if(tCell) tCell.innerHTML=fmtScore(pScore!==null&&eVal!==null?(pScore*0.6+eVal*0.4):null);
+  } else {
+    // recalc period score for this student
+    const hwInputs=document.querySelectorAll('.gc[data-sid="'+sid+'"]:not([data-exam])');
+    let ws=0,wss=0;
+    hwInputs.forEach(inp=>{
+      const it=_scoreItems[parseInt(inp.dataset.idx)];
+      if(!it) return;
+      if(inp.value!==""){wss+=Number(inp.value)*Number(it.weight);ws+=Number(it.weight);}
+    });
+    const pScore=ws>0?wss/100:null;
+    const pCell=$("pdisp-"+sid);
+    if(pCell) pCell.innerHTML=fmtScore(pScore);
+    // update total
+    const examInp=document.querySelector('.gc[data-sid="'+sid+'"][data-exam]');
+    const eVal=examInp&&examInp.value!==""?Number(examInp.value):null;
+    const tCell=$("tdisp-"+sid);
+    if(tCell) tCell.innerHTML=fmtScore(pScore!==null&&eVal!==null?(pScore*0.6+eVal*0.4):null);
+  }
+  calcAllAvg();
+};
+
+/* ── arrow key navigation ── */
+window.onGcKey = (e, el) => {
+  const row=parseInt(el.dataset.row), col=parseInt(el.dataset.col), tc=parseInt(el.dataset.totalcols);
+  let nr=row,nc=col;
+  if(e.key==="ArrowDown"||e.key==="Enter"){nr++;e.preventDefault();}
+  else if(e.key==="ArrowUp"){nr--;e.preventDefault();}
+  else if(e.key==="ArrowRight"||e.key==="Tab"){nc++;if(nc>=tc){nc=0;nr++;}e.preventDefault();}
+  else if(e.key==="ArrowLeft"||(e.key==="Tab"&&e.shiftKey)){nc--;if(nc<0){nc=tc-1;nr--;}e.preventDefault();}
+  else return;
+  const next=document.querySelector('.gc[data-row="'+nr+'"][data-col="'+nc+'"]');
+  if(next){next.focus();next.select();}
+};
 
 function calcAllAvg(){
-  // per hw col
-  const hwInputsByIdx = {};
-  document.querySelectorAll(".hw-input").forEach(inp=>{
-    const i = inp.dataset.idx;
-    if(!hwInputsByIdx[i]) hwInputsByIdx[i]=[];
-    if(inp.value!=="") hwInputsByIdx[i].push(Number(inp.value));
+  // per hw col averages
+  _scoreItems.forEach((_,i)=>{
+    const vals=[...document.querySelectorAll('.gc[data-idx="'+i+'"]')].filter(el=>el.value!=="").map(el=>Number(el.value));
+    const el=$("avgHw"+i);if(el) el.textContent=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1):"—";
   });
-  Object.keys(hwInputsByIdx).forEach(i=>{
-    const vals = hwInputsByIdx[i];
-    const el = $("avgHw"+i);
-    if(el) el.textContent = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : "—";
-  });
-  // period avg
-  const pDisps = document.querySelectorAll("[id^='pdisp-']");
-  const pVals = [];
-  pDisps.forEach(d=>{
-    const span = d.querySelector(".score-num:not(.none)");
-    if(span) pVals.push(Number(span.textContent));
-  });
-  const apEl = $("avgPeriod");
-  if(apEl) apEl.textContent = pVals.length ? (pVals.reduce((a,b)=>a+b,0)/pVals.length).toFixed(1) : "—";
+  // period subtotal avg
+  const pVals=[...document.querySelectorAll("[id^='pdisp-']")].map(d=>{
+    const sp=d.querySelector("[style*='color']");return sp?parseFloat(sp.textContent):null;
+  }).filter(v=>v!==null);
+  const ap=$("avgPeriod");if(ap) ap.textContent=pVals.length?(pVals.reduce((a,b)=>a+b,0)/pVals.length).toFixed(1):"—";
   // exam avg
-  const exVals = [...document.querySelectorAll(".exam-input")].filter(i=>i.value!=="").map(i=>Number(i.value));
-  const aeEl = $("avgExam");
-  if(aeEl) aeEl.textContent = exVals.length ? (exVals.reduce((a,b)=>a+b,0)/exVals.length).toFixed(1) : "—";
+  const eVals=[...document.querySelectorAll('.gc[data-exam]')].filter(el=>el.value!=="").map(el=>Number(el.value));
+  const ae=$("avgExam");if(ae) ae.textContent=eVals.length?(eVals.reduce((a,b)=>a+b,0)/eVals.length).toFixed(1):"—";
+  // total avg
+  const tVals=[...document.querySelectorAll("[id^='tdisp-']")].map(d=>{
+    const sp=d.querySelector("[style*='color']");return sp?parseFloat(sp.textContent):null;
+  }).filter(v=>v!==null);
+  const at=$("avgTotal");if(at) at.textContent=tVals.length?(tVals.reduce((a,b)=>a+b,0)/tVals.length).toFixed(1):"—";
 }
 
 window.saveAllScores = async () => {
-  const cls = scoreCurrentClass, period = scoreCurrentPeriod;
-  const cfgSnap = await getDoc(doc(db,"periodConfig",cls+"_"+period));
-  const items = cfgSnap.exists() ? (cfgSnap.data().items||[]) : [];
-  const batch = writeBatch(db);
-  let count = 0;
-  // gather all student ids from table
-  const rows = document.querySelectorAll("[id^='srow-']");
-  rows.forEach(row=>{
-    const sid = row.id.replace("srow-","");
-    const hwScores = {};
-    row.querySelectorAll(".hw-input").forEach(inp=>{ if(inp.value!=="") hwScores[inp.dataset.idx]=Number(inp.value); });
-    const examInp = row.querySelector(".exam-input");
-    const examVal = examInp && examInp.value!=="" ? Number(examInp.value) : null;
-    const ref = doc(db,"scores",cls+"_"+period+"_"+sid);
-    batch.set(ref,{ class:cls, period, studentId:sid, hw:hwScores, exam:examVal, updatedAt:serverTimestamp() });
-    count++;
+  const cls=scoreCurrentClass, period=scoreCurrentPeriod;
+  if(period===0){toast("學期總分頁無法儲存，請至各次輸入","err");return;}
+  const batch=writeBatch(db); let n=0;
+  document.querySelectorAll("[id^='srow-']").forEach(row=>{
+    const sid=row.id.replace("srow-","");
+    const hw={};
+    row.querySelectorAll('.gc[data-idx]').forEach(inp=>{if(inp.value!=="") hw[inp.dataset.idx]=Number(inp.value);});
+    const examInp=row.querySelector('.gc[data-exam]');
+    const exam=examInp&&examInp.value!==""?Number(examInp.value):null;
+    batch.set(doc(db,"scores",cls+"_"+period+"_"+sid),{class:cls,period,studentId:sid,hw,exam,updatedAt:serverTimestamp()});
+    n++;
   });
   await batch.commit();
-  toast("已儲存 "+count+" 筆成績");
+  toast("已儲存 "+n+" 筆 ✓");
 };
 
 /* ══════════════════ PERIOD CONFIG ══════════════════ */
