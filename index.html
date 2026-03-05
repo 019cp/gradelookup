@@ -630,7 +630,7 @@ async function renderScoreSheet(){
 
   const [cfgSnap, stuSnap, scSnap] = await Promise.all([
     getDoc(doc(db,"periodConfig",cls+"_"+period)),
-    getDocs(query(collection(db,"students"),where("class","==",cls),orderBy("seat"))),
+    getDocs(query(collection(db,"students"),where("class","==",cls))),
     getDocs(query(collection(db,"scores"),where("class","==",cls),where("period","==",period)))
   ]);
 
@@ -727,8 +727,8 @@ async function renderSemesterSheet(){
   const wrap=$("scoreSheetWrap");
   wrap.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);">計算中...</div>';
 
-  const stuSnap=await getDocs(query(collection(db,"students"),where("class","==",cls),orderBy("seat")));
-  const stus=stuSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const stuSnap=await getDocs(query(collection(db,"students"),where("class","==",cls)));
+  const stus=stuSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.seat-b.seat);
   if(!stus.length){wrap.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);">尚無學生</div>';return;}
 
   // load all 3 periods scores + configs
@@ -1066,14 +1066,15 @@ window.deleteStu = async(id,name) => {
 async function loadStuList(){
   const fcls = $("stuFilter")?.value||"";
   const q = fcls
-    ? query(collection(db,"students"),where("class","==",fcls),orderBy("seat"))
-    : query(collection(db,"students"),orderBy("seat"));
+    ? query(collection(db,"students"),where("class","==",fcls))
+    : collection(db,"students");
   const snap = await getDocs(q);
+  const sortedDocs = snap.docs.slice().sort((a,b)=>a.data().seat-b.data().seat);
   const bSnap = await getDocs(collection(db,"bindings"));
   const bMap = {}; bSnap.forEach(d=>{ bMap[d.data().studentId]=d.data().email; });
   const tbody=$("stuTbody");
   if(snap.empty){ tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--t3);padding:24px;">尚無學生</td></tr>'; return; }
-  tbody.innerHTML = snap.docs.map(d=>{
+  tbody.innerHTML = sortedDocs.map(d=>{
     const s=d.data(), bound=bMap[d.id];
     return '<tr><td class="mono" style="color:var(--t3);">'+s.seat+'</td>'
       +'<td><strong>'+s.name+'</strong></td>'
@@ -1181,10 +1182,10 @@ window.openSimModal=()=>{
 };
 window.simLoadStus=async()=>{
   const cls=$("simCls").value;
-  const snap=await getDocs(query(collection(db,"students"),where("class","==",cls),orderBy("seat")));
+  const snap=await getDocs(query(collection(db,"students"),where("class","==",cls)));
   $("simStu").innerHTML=snap.empty
     ?'<option value="">此班尚無學生</option>'
-    :snap.docs.map(d=>'<option value="'+d.id+'">'+d.data().seat+'號 '+d.data().name+'</option>').join("");
+    :snap.docs.slice().sort((a,b)=>a.data().seat-b.data().seat).map(d=>'<option value="'+d.id+'">'+d.data().seat+'號 '+d.data().name+'</option>').join("");
 };
 window.startSim=async()=>{
   const stuId=$("simStu").value; if(!stuId){ toast("請選擇學生","err"); return; }
