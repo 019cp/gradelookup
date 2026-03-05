@@ -562,7 +562,7 @@ function showClsSubnav(onSelect){
   $("adminMain").classList.add("has-subnav");
   tabs.innerHTML = classes.map((cls,i)=>{
     const isActive = i===0?" active":"";
-    return '<div class="csn-tab'+isActive+'" data-cls="'+cls.name+'" onclick="clsSubnavSelect(''+cls.name+'',this)">'+cls.name+'</div>';
+    return '<div class="csn-tab'+isActive+'" data-cls="'+cls.name+'" onclick="clsSubnavSelect(\''+cls.name+'\',this)">'+cls.name+'</div>';
   }).join("");
   // set callback
   window._clsSubnavCallback = onSelect;
