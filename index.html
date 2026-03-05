@@ -544,11 +544,20 @@ function populateSelects(){
 
 /* ── Class button renderer ── */
 function renderClsBtns(containerId, onSelect){
-  const wrap=$(containerId); if(!wrap) return;
-  wrap.innerHTML = classes.map((c,i)=>{
-    const isActive = (i===0) ? " active" : "";
-    return '<button class="cls-btn'+isActive+'" data-cls="'+c.name+'" onclick="('+onSelect.name+')(\''+c.name+'\',this)">'+c.name+'</button>';
-  }).join("");
+  const wrap = $(containerId); if(!wrap) return;
+  wrap.innerHTML = "";
+  classes.forEach((cls, i) => {
+    const btn = document.createElement("button");
+    btn.className = "cls-btn" + (i===0 ? " active" : "");
+    btn.dataset.cls = cls.name;
+    btn.textContent = cls.name;
+    btn.addEventListener("click", () => {
+      wrap.querySelectorAll(".cls-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      onSelect(cls.name, btn);
+    });
+    wrap.appendChild(btn);
+  });
   if(classes.length) onSelect(classes[0].name, wrap.querySelector(".cls-btn"));
 }
 window.renderClsBtns = renderClsBtns;
@@ -560,27 +569,31 @@ function showClsSubnav(onSelect){
   if(!subnav||!tabs) return;
   subnav.classList.add("visible");
   $("adminMain").classList.add("has-subnav");
-  tabs.innerHTML = classes.map((cls,i)=>{
-    const isActive = i===0?" active":"";
-    return '<div class="csn-tab'+isActive+'" data-cls="'+cls.name+'" onclick="clsSubnavSelect(\''+cls.name+'\',this)">'+cls.name+'</div>';
-  }).join("");
-  // set callback
-  window._clsSubnavCallback = onSelect;
-  // auto-select first
+
+  // Build tabs using DOM (no inline onclick = no quote issues)
+  tabs.innerHTML = "";
+  classes.forEach((cls, i) => {
+    const btn = document.createElement("div");
+    btn.className = "csn-tab" + (i===0 ? " active" : "");
+    btn.dataset.cls = cls.name;
+    btn.textContent = cls.name;
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".csn-tab").forEach(t => t.classList.remove("active"));
+      btn.classList.add("active");
+      onSelect(cls.name, btn);
+    });
+    tabs.appendChild(btn);
+  });
+
+  // Auto-select first
   if(classes.length){
-    const firstCls = classes[0].name;
-    window._clsSubnavCallback(firstCls, tabs.querySelector(".csn-tab"));
+    onSelect(classes[0].name, tabs.querySelector(".csn-tab"));
   }
 }
 function hideClsSubnav(){
-  const subnav=$("clsSubnav");if(subnav) subnav.classList.remove("visible");
-  const m=$("adminMain");if(m) m.classList.remove("has-subnav");
+  const subnav=$("clsSubnav"); if(subnav) subnav.classList.remove("visible");
+  const m=$("adminMain");      if(m) m.classList.remove("has-subnav");
 }
-window.clsSubnavSelect = (name, el) => {
-  document.querySelectorAll(".csn-tab").forEach(t=>t.classList.remove("active"));
-  el.classList.add("active");
-  if(window._clsSubnavCallback) window._clsSubnavCallback(name, el);
-};
 
 
 /* ══════════════════ SCORE ENTRY ══════════════════ */
