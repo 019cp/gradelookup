@@ -217,6 +217,26 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
 .sem-tab{display:none;}
 .sem-tab.active{display:block;}
 
+
+/* ── CLASS SUBNAV BAR ── */
+.cls-subnav{
+  position:fixed;top:54px;left:210px;right:0;z-index:40;
+  background:var(--s1);border-bottom:1px solid var(--b1);
+  padding:0 20px;display:none;align-items:center;gap:0;height:44px;
+}
+.cls-subnav.visible{display:flex;}
+.csn-label{font-size:11px;color:var(--t3);letter-spacing:2px;font-family:'JetBrains Mono',monospace;margin-right:14px;white-space:nowrap;}
+.csn-tabs{display:flex;gap:0;align-items:stretch;height:100%;}
+.csn-tab{
+  display:flex;align-items:center;padding:0 18px;
+  font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;
+  color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;
+  transition:all .15s;white-space:nowrap;
+}
+.csn-tab:hover{color:var(--t1);background:rgba(255,255,255,.03);}
+.csn-tab.active{color:var(--acc);border-bottom-color:var(--acc);}
+/* offset content when subnav visible */
+.main.has-subnav{padding-top:68px;}
 </style>
 </head>
 <body>
@@ -288,6 +308,11 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
       <button class="btn btn-ghost btn-sm" onclick="doSignOut()">登出</button>
     </div>
   </div>
+  <!-- CLASS SUBNAV BAR -->
+  <div class="cls-subnav" id="clsSubnav">
+    <span class="csn-label">班級</span>
+    <div class="csn-tabs" id="clsSubnavTabs"></div>
+  </div>
   <div class="layout">
     <div class="sidebar">
       <div class="slbl">成績輸入</div>
@@ -300,13 +325,10 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
       <div class="slbl">系統</div>
       <div class="nv" data-p="classes" onclick="navTo('classes')"><span class="ico">🏫</span>班級管理</div>
     </div>
-    <div class="main">
+    <div class="main" id="adminMain">
 
       <!-- ── 全班成績輸入 ── -->
       <div class="page active" id="page-score">
-        <div class="ph"><div><h2>📊 全班成績輸入</h2><p>輸入平時成績小作業與定期考分數</p></div></div>
-        <!-- Class buttons -->
-        <div id="scoreClsBtns" class="cls-btns"></div>
         <!-- Period tabs -->
         <div class="period-tabs" id="scorePeriodTabs">
           <div class="ptab active" data-period="1" onclick="scoreSelectPeriod(1,this)">第一次平時＋定期</div>
@@ -320,8 +342,6 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
 
       <!-- ── 平時成績設定 ── -->
       <div class="page" id="page-periods">
-        <div class="ph"><div><h2>📋 平時成績設定</h2><p>為每次平時成績設定小作業及各自比重（合計需等於 100%）</p></div></div>
-        <div id="periodClsBtns" class="cls-btns"></div>
         <div class="period-tabs">
           <div class="ptab active" data-period="1" onclick="periodSelectTab(1,this)">第一次平時</div>
           <div class="ptab" data-period="2" onclick="periodSelectTab(2,this)">第二次平時</div>
@@ -478,8 +498,7 @@ onAuthStateChanged(auth, async user => {
     $("adminNm").textContent = user.displayName||user.email;
     await loadStuCache();
     populateSelects();
-    renderClsBtns("scoreClsBtns", scoreSelectClass);
-    renderClsBtns("periodClsBtns", periodSelectClass);
+    showClsSubnav(scoreSelectClass); // default page is score
     renderClsList();
     loadStuList(); loadBindList();
     showScreen("admin");
@@ -534,6 +553,36 @@ function renderClsBtns(containerId, onSelect){
 }
 window.renderClsBtns = renderClsBtns;
 
+/* ── unified class subnav ── */
+function showClsSubnav(onSelect){
+  const subnav = $("clsSubnav");
+  const tabs   = $("clsSubnavTabs");
+  if(!subnav||!tabs) return;
+  subnav.classList.add("visible");
+  $("adminMain").classList.add("has-subnav");
+  tabs.innerHTML = classes.map((cls,i)=>{
+    const isActive = i===0?" active":"";
+    return '<div class="csn-tab'+isActive+'" data-cls="'+cls.name+'" onclick="clsSubnavSelect(''+cls.name+'',this)">'+cls.name+'</div>';
+  }).join("");
+  // set callback
+  window._clsSubnavCallback = onSelect;
+  // auto-select first
+  if(classes.length){
+    const firstCls = classes[0].name;
+    window._clsSubnavCallback(firstCls, tabs.querySelector(".csn-tab"));
+  }
+}
+function hideClsSubnav(){
+  const subnav=$("clsSubnav");if(subnav) subnav.classList.remove("visible");
+  const m=$("adminMain");if(m) m.classList.remove("has-subnav");
+}
+window.clsSubnavSelect = (name, el) => {
+  document.querySelectorAll(".csn-tab").forEach(t=>t.classList.remove("active"));
+  el.classList.add("active");
+  if(window._clsSubnavCallback) window._clsSubnavCallback(name, el);
+};
+
+
 /* ══════════════════ SCORE ENTRY ══════════════════ */
 let scoreCurrentClass = "";
 let scoreCurrentPeriod = 1;
@@ -541,8 +590,6 @@ let _scoreItems = []; // cache items for current view
 
 window.scoreSelectClass = (name, el) => {
   scoreCurrentClass = name;
-  document.querySelectorAll("#scoreClsBtns .cls-btn").forEach(b=>b.classList.remove("active"));
-  el.classList.add("active");
   renderScoreSheet();
 };
 window.scoreSelectPeriod = (period, el) => {
@@ -807,8 +854,6 @@ let periodCurrentTab = 1;
 
 window.periodSelectClass = (name, el) => {
   periodCurrentClass = name;
-  document.querySelectorAll("#periodClsBtns .cls-btn").forEach(b=>b.classList.remove("active"));
-  el.classList.add("active");
   renderPeriodEditor();
 };
 window.periodSelectTab = (period, el) => {
@@ -979,16 +1024,11 @@ window.doBind = async () => {
 window.navTo = page => {
   document.querySelectorAll(".nv").forEach(el=>el.classList.toggle("active",el.dataset.p===page));
   document.querySelectorAll(".page").forEach(el=>el.classList.toggle("active",el.id==="page-"+page));
-  if(page==="score"){
-    renderClsBtns("scoreClsBtns", scoreSelectClass);
-  }
-  if(page==="periods"){
-    renderClsBtns("periodClsBtns", periodSelectClass);
-    if(periodCurrentClass) renderPeriodEditor();
-  }
-  if(page==="students") loadStuList();
-  if(page==="bindings") loadBindList();
-  if(page==="classes")  renderClsList();
+  if(page==="score"){ showClsSubnav(scoreSelectClass); }
+  if(page==="periods"){ showClsSubnav(periodSelectClass); }
+  if(page==="students"){ hideClsSubnav(); loadStuList(); }
+  if(page==="bindings"){ hideClsSubnav(); loadBindList(); }
+  if(page==="classes"){  hideClsSubnav(); renderClsList(); }
 };
 
 /* ══════════════════ STUDENTS ══════════════════ */
@@ -1100,17 +1140,17 @@ window.saveCls=async()=>{
   await setDoc(doc(collection(db,"classes")),{name,createdAt:serverTimestamp()});
   toast("已新增 "+name); cm("M-cls");
   await loadClasses(); populateSelects();
-  renderClsBtns("scoreClsBtns",scoreSelectClass);
-  renderClsBtns("periodClsBtns",periodSelectClass);
   renderClsList();
+  // refresh subnav if visible
+  if($("clsSubnav").classList.contains("visible") && window._clsSubnavCallback) showClsSubnav(window._clsSubnavCallback);
 };
 window.deleteCls=async(id,name)=>{
   if(!confirm("刪除「"+name+"」班？")) return;
   await deleteDoc(doc(db,"classes",id)); toast("已刪除");
   await loadClasses(); populateSelects();
-  renderClsBtns("scoreClsBtns",scoreSelectClass);
-  renderClsBtns("periodClsBtns",periodSelectClass);
   renderClsList();
+  // refresh subnav if visible
+  if($("clsSubnav").classList.contains("visible") && window._clsSubnavCallback) showClsSubnav(window._clsSubnavCallback);
 };
 function renderClsList(){
   const el=$("clsList"); if(!el) return;
