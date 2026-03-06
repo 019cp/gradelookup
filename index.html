@@ -171,10 +171,51 @@ tfoot td{padding:10px 12px;font-size:12px;background:var(--s3);border-top:2px so
 /* ── SIM BANNER ── */
 #simBanner{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(245,158,11,.15);border-bottom:2px solid var(--ylw);padding:7px 20px;display:flex;align-items:center;gap:12px;}
 
+/* ══ MOBILE BOTTOM NAV (admin) ══ */
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:60;
+  background:var(--s1);border-top:1px solid var(--b1);
+  padding:6px 0 env(safe-area-inset-bottom,6px);
+  display:none;justify-content:space-around;}
+.mob-nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 12px;cursor:pointer;color:var(--t3);transition:color .15s;border:none;background:none;font-family:'Noto Sans TC',sans-serif;}
+.mob-nav-item .mn-ico{font-size:18px;}
+.mob-nav-item .mn-lbl{font-size:9px;letter-spacing:.5px;}
+.mob-nav-item.active{color:var(--acc);}
+
 @media(max-width:768px){
+  /* Admin layout */
   .sidebar{display:none;}
-  .main{margin-left:0;}
+  .main{margin-left:0;padding:14px 12px 80px;}
+  .cls-subnav{left:0;}
+  .topnav{padding:0 12px;}
+  .topnav .logo{font-size:14px;}
+  .upill span{display:none;}
+  .upill{padding:4px 8px;}
+  .mob-nav{display:flex;}
+  /* Score table on mobile */
+  .grade-scroll{font-size:12px;}
+  .gc{width:46px;font-size:12px;padding:6px 2px;}
+  .col-name{width:60px;min-width:60px;}
+  .col-seat{width:38px;min-width:38px;}
+  /* Period tabs wrap */
+  .period-tabs{flex-wrap:wrap;}
+  .ptab{font-size:11px;padding:7px 10px;}
+  /* Student cards view on mobile */
   .stu-summary{grid-template-columns:1fr 1fr;}
+  .stu-wrap{padding:68px 14px 30px;}
+  .period-card{padding:12px;}
+  .pc-head{flex-direction:column;align-items:flex-start;gap:6px;}
+  /* Hide headers on small tables */
+  .tbl-wrap table thead th:nth-child(3){display:none;}
+  .tbl-wrap table td:nth-child(3){display:none;}
+  /* Buttons smaller */
+  .btn-xs{padding:4px 8px;font-size:10px;}
+  /* PH wrap */
+  .ph{flex-direction:column;gap:8px;}
+}
+@media(max-width:480px){
+  .stu-summary{grid-template-columns:1fr;}
+  .scard .sv{font-size:22px;}
 }
 
 /* ── EXCEL GRADE TABLE ── */
@@ -353,21 +394,19 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
       <!-- ── 學生名單 ── -->
       <div class="page" id="page-students">
         <div class="ph">
-          <div><h2>👥 學生名單</h2><p>管理學生基本資料</p></div>
-          <div style="display:flex;gap:8px;">
+          <div><h2>👥 學生名單</h2></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-ghost" onclick="openImportModal()">📋 批次匯入</button>
             <button class="btn btn-primary" onclick="openStuModal()">＋ 新增</button>
           </div>
         </div>
-        <div style="margin-bottom:12px;"><div class="fg" style="max-width:140px;"><label>篩選班級</label><select id="stuFilter" onchange="loadStuList()"></select></div></div>
         <div class="tbl-wrap"><table><thead><tr><th>座號</th><th>姓名</th><th>班級</th><th>綁定狀態</th><th></th></tr></thead><tbody id="stuTbody"></tbody></table></div>
       </div>
 
       <!-- ── 帳號綁定 ── -->
       <div class="page" id="page-bindings">
-        <div class="ph"><div><h2>🔗 帳號綁定管理</h2><p>查看、修改或移除學生的 Google 帳號綁定</p></div></div>
-        <div style="margin-bottom:12px;"><div class="fg" style="max-width:140px;"><label>篩選班級</label><select id="bindFilter" onchange="loadBindList()"></select></div></div>
-        <div class="tbl-wrap"><table><thead><tr><th>座號</th><th>姓名</th><th>班級</th><th>Google 帳號</th><th>綁定時間</th><th></th></tr></thead><tbody id="bindTbody"></tbody></table></div>
+        <div class="ph"><div><h2>🔗 帳號綁定管理</h2><p>可解除學生綁定，讓本人重新綁定</p></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>座號</th><th>姓名</th><th>班級</th><th>綁定 Google 帳號</th><th>時間</th><th></th></tr></thead><tbody id="bindTbody"></tbody></table></div>
       </div>
 
       <!-- ── 班級管理 ── -->
@@ -381,6 +420,24 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
 
     </div>
   </div>
+  <!-- Mobile bottom nav -->
+  <nav class="mob-nav" id="mobNav">
+    <button class="mob-nav-item active" data-p="score" onclick="navTo('score');mobNavActive(this)">
+      <span class="mn-ico">📊</span><span class="mn-lbl">成績輸入</span>
+    </button>
+    <button class="mob-nav-item" data-p="periods" onclick="navTo('periods');mobNavActive(this)">
+      <span class="mn-ico">📋</span><span class="mn-lbl">平時設定</span>
+    </button>
+    <button class="mob-nav-item" data-p="students" onclick="navTo('students');mobNavActive(this)">
+      <span class="mn-ico">👥</span><span class="mn-lbl">學生名單</span>
+    </button>
+    <button class="mob-nav-item" data-p="bindings" onclick="navTo('bindings');mobNavActive(this)">
+      <span class="mn-ico">🔗</span><span class="mn-lbl">綁定管理</span>
+    </button>
+    <button class="mob-nav-item" data-p="classes" onclick="navTo('classes');mobNavActive(this)">
+      <span class="mn-ico">🏫</span><span class="mn-lbl">班級</span>
+    </button>
+  </nav>
 </div>
 
 <!-- ═══════════ MODALS ═══════════ -->
@@ -399,8 +456,9 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
 <!-- Import modal -->
 <div class="mbg hidden" id="M-import" onclick="mbgClose(event,'M-import')">
   <div class="modal" style="max-width:540px;"><h3>📋 批次匯入學生</h3>
-    <p style="color:var(--t2);font-size:12px;margin-bottom:10px;line-height:1.8;">格式：<code style="color:var(--acc);">座號 姓名 班級</code>　每行一筆<br>例：<code style="color:var(--acc2);">1 吳宥磬 804</code></p>
-    <div class="fg" style="margin-bottom:10px;"><label>貼上名單</label><textarea id="importTxt" rows="9" style="resize:vertical;font-family:'JetBrains Mono',monospace;font-size:12px;padding:8px 10px;background:var(--bg);border:1px solid var(--b1);border-radius:var(--rs);color:var(--t1);outline:none;width:100%;" placeholder="1 吳宥磬 804&#10;2 林羿宇 804"></textarea></div>
+    <div id="importClsHint" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:var(--rs);padding:7px 12px;font-size:12px;color:var(--acc);font-family:'JetBrains Mono',monospace;margin-bottom:10px;"></div>
+    <p style="color:var(--t2);font-size:12px;margin-bottom:10px;line-height:1.9;">格式：<code style="color:var(--acc);">座號 姓名</code>　每行一筆（班級自動帶入）<br>例：<code style="color:var(--acc2);">1 吳宥磬</code><br><span style="color:var(--t3);">也可加第三欄指定班級：</span><code style="color:var(--t2);">1 吳宥磬 804</code></p>
+    <div class="fg" style="margin-bottom:10px;"><label>貼上名單</label><textarea id="importTxt" rows="9" style="resize:vertical;font-family:'JetBrains Mono',monospace;font-size:12px;padding:8px 10px;background:var(--bg);border:1px solid var(--b1);border-radius:var(--rs);color:var(--t1);outline:none;width:100%;" placeholder="1 吳宥磬&#10;2 林羿宇&#10;3 許浩瑋"></textarea></div>
     <div id="importResult" style="max-height:140px;overflow-y:auto;font-size:12px;font-family:'JetBrains Mono',monospace;"></div>
     <div class="mfoot"><button class="btn btn-ghost" onclick="cm('M-import')">關閉</button><button class="btn btn-primary" onclick="runImport()">匯入</button></div>
   </div>
@@ -499,6 +557,11 @@ onAuthStateChanged(auth, async user => {
     await loadStuCache();
     populateSelects();
     showClsSubnav(scoreSelectClass); // default page is score
+    // pre-init class vars from first class
+    if(classes.length){
+      stuCurrentClass  = classes[0].name;
+      bindCurrentClass = classes[0].name;
+    }
     renderClsList();
     loadStuList(); loadBindList();
     showScreen("admin");
@@ -1034,11 +1097,15 @@ window.doBind = async () => {
 window.navTo = page => {
   document.querySelectorAll(".nv").forEach(el=>el.classList.toggle("active",el.dataset.p===page));
   document.querySelectorAll(".page").forEach(el=>el.classList.toggle("active",el.id==="page-"+page));
-  if(page==="score"){ showClsSubnav(scoreSelectClass); }
-  if(page==="periods"){ showClsSubnav(periodSelectClass); }
-  if(page==="students"){ hideClsSubnav(); loadStuList(); }
-  if(page==="bindings"){ hideClsSubnav(); loadBindList(); }
-  if(page==="classes"){  hideClsSubnav(); renderClsList(); }
+  if(page==="score")    { showClsSubnav(scoreSelectClass); }
+  if(page==="periods")  { showClsSubnav(periodSelectClass); }
+  if(page==="students") { showClsSubnav(stuSelectClass); }
+  if(page==="bindings") { showClsSubnav(bindSelectClass); }
+  if(page==="classes")  { hideClsSubnav(); renderClsList(); }
+};
+window.mobNavActive = (btn) => {
+  document.querySelectorAll(".mob-nav-item").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
 };
 
 /* ══════════════════ STUDENTS ══════════════════ */
@@ -1089,18 +1156,27 @@ async function loadStuList(){
 window.loadStuList = loadStuList;
 
 /* ── Import ── */
-window.openImportModal = () => { $("importTxt").value=""; $("importResult").innerHTML=""; $("M-import").classList.remove("hidden"); };
+window.openImportModal = () => {
+  $("importTxt").value=""; $("importResult").innerHTML="";
+  // Show which class we're importing into
+  const cls = stuCurrentClass||"（請先在上方選班級）";
+  $("importClsHint").textContent = "匯入班級："+cls;
+  $("M-import").classList.remove("hidden");
+};
 window.runImport = async () => {
+  const cls = stuCurrentClass;
+  if(!cls){ toast("請先選擇班級","err"); return; }
   const lines=$("importTxt").value.trim().split("\n").filter(l=>l.trim());
   if(!lines.length){ toast("請貼上名單","err"); return; }
   const batch=writeBatch(db); let ok=0,fail=0,html="";
   for(const line of lines){
     const p=line.trim().split(/\s+/);
-    if(p.length<3){ html+='<div style="color:var(--red)">✕ 格式錯誤：'+line+'</div>'; fail++; continue; }
-    const [seat,name,cls]=p, sn=parseInt(seat);
-    if(!sn||!name||!cls){ html+='<div style="color:var(--red)">✕ 資料有誤：'+line+'</div>'; fail++; continue; }
-    batch.set(doc(db,"students",cls+"_"+String(sn).padStart(2,"0")),{class:cls,seat:sn,name});
-    html+='<div style="color:var(--grn)">✓ '+cls+' 第'+sn+'號 '+name+'</div>'; ok++;
+    // Accept "座號 姓名" (2 cols, class from subnav) or "座號 姓名 班級" (3 cols)
+    if(p.length<2){ html+='<div style="color:var(--red)">✕ 格式錯誤：'+line+'</div>'; fail++; continue; }
+    const seat=parseInt(p[0]), name=p[1], targetCls=p[2]||cls;
+    if(!seat||!name){ html+='<div style="color:var(--red)">✕ 資料有誤：'+line+'</div>'; fail++; continue; }
+    batch.set(doc(db,"students",targetCls+"_"+String(seat).padStart(2,"0")),{class:targetCls,seat,name});
+    html+='<div style="color:var(--grn)">✓ '+targetCls+' 第'+seat+'號 '+name+'</div>'; ok++;
   }
   await batch.commit();
   $("importResult").innerHTML='<div style="margin-bottom:6px;">完成：✓'+ok+' ✕'+fail+'</div>'+html;
