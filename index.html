@@ -662,6 +662,10 @@ function hideClsSubnav(){
 /* ══════════════════ SCORE ENTRY ══════════════════ */
 let scoreCurrentClass = "";
 let scoreCurrentPeriod = 1;
+let stuCurrentClass  = "";
+let bindCurrentClass = "";
+window.stuSelectClass  = (name) => { stuCurrentClass  = name; loadStuList(); };
+window.bindSelectClass = (name) => { bindCurrentClass = name; loadBindList(); };
 let _scoreItems = []; // cache items for current view
 
 window.scoreSelectClass = (name, el) => {
@@ -1131,27 +1135,34 @@ window.deleteStu = async(id,name) => {
   toast("已刪除"); await loadStuCache(); loadStuList();
 };
 async function loadStuList(){
-  const fcls = $("stuFilter")?.value||"";
-  const q = fcls
-    ? query(collection(db,"students"),where("class","==",fcls))
+  const cls = stuCurrentClass;
+  const q = cls
+    ? query(collection(db,"students"),where("class","==",cls))
     : collection(db,"students");
   const snap = await getDocs(q);
   const sortedDocs = snap.docs.slice().sort((a,b)=>a.data().seat-b.data().seat);
   const bSnap = await getDocs(collection(db,"bindings"));
   const bMap = {}; bSnap.forEach(d=>{ bMap[d.data().studentId]=d.data().email; });
-  const tbody=$("stuTbody");
-  if(snap.empty){ tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--t3);padding:24px;">尚無學生</td></tr>'; return; }
-  tbody.innerHTML = sortedDocs.map(d=>{
+  const tbody=$("stuTbody"); if(!tbody) return;
+  if(!sortedDocs.length){ tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--t3);padding:24px;">此班尚無學生</td></tr>'; return; }
+  tbody.innerHTML="";
+  sortedDocs.forEach(d=>{
     const s=d.data(), bound=bMap[d.id];
-    return '<tr><td class="mono" style="color:var(--t3);">'+s.seat+'</td>'
+    const tr=document.createElement("tr");
+    tr.innerHTML='<td class="mono" style="color:var(--t3);">'+String(s.seat).padStart(2,"0")+'</td>'
       +'<td><strong>'+s.name+'</strong></td>'
       +'<td><span class="badge bb">'+s.class+'</span></td>'
-      +'<td>'+(bound?'<span class="badge bg">✓ 已綁定</span>':'<span class="badge bgr">未綁定</span>')+'</td>'
-      +'<td style="display:flex;gap:6px;">'
-      +'<button class="btn btn-ghost btn-xs" onclick="openStuModal(\''+d.id+'\')">編輯</button>'
-      +'<button class="btn btn-danger btn-xs" onclick="deleteStu(\''+d.id+'\',\''+s.name+'\')">刪除</button>'
-      +'</td></tr>';
-  }).join("");
+      +'<td style="max-width:180px;">'+(bound
+        ?'<span style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--grn);word-break:break-all;">✓ '+bound+'</span>'
+        :'<span class="badge bgr">未綁定</span>')+'</td>'
+      +'<td style="display:flex;gap:6px;"></td>';
+    const bc=tr.querySelector("td:last-child");
+    const eb=document.createElement("button"); eb.className="btn btn-ghost btn-xs"; eb.textContent="編輯";
+    eb.addEventListener("click",()=>openStuModal(d.id));
+    const db2=document.createElement("button"); db2.className="btn btn-danger btn-xs"; db2.textContent="刪除";
+    db2.addEventListener("click",()=>deleteStu(d.id,s.name));
+    bc.appendChild(eb); bc.appendChild(db2); tbody.appendChild(tr);
+  });
 }
 window.loadStuList = loadStuList;
 
