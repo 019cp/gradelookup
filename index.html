@@ -183,7 +183,6 @@ tfoot td{padding:10px 12px;font-size:12px;background:var(--s3);border-top:2px so
 .mob-nav-item.active{color:var(--acc);}
 
 @media(max-width:768px){
-  /* Admin layout */
   .sidebar{display:none;}
   .main{margin-left:0;padding:14px 12px 80px;}
   .cls-subnav{left:0;}
@@ -192,25 +191,19 @@ tfoot td{padding:10px 12px;font-size:12px;background:var(--s3);border-top:2px so
   .upill span{display:none;}
   .upill{padding:4px 8px;}
   .mob-nav{display:flex;}
-  /* Score table on mobile */
   .grade-scroll{font-size:12px;}
   .gc{width:46px;font-size:12px;padding:6px 2px;}
   .col-name{width:60px;min-width:60px;}
   .col-seat{width:38px;min-width:38px;}
-  /* Period tabs wrap */
   .period-tabs{flex-wrap:wrap;}
   .ptab{font-size:11px;padding:7px 10px;}
-  /* Student cards view on mobile */
   .stu-summary{grid-template-columns:1fr 1fr;}
   .stu-wrap{padding:68px 14px 30px;}
   .period-card{padding:12px;}
   .pc-head{flex-direction:column;align-items:flex-start;gap:6px;}
-  /* Hide headers on small tables */
   .tbl-wrap table thead th:nth-child(3){display:none;}
   .tbl-wrap table td:nth-child(3){display:none;}
-  /* Buttons smaller */
   .btn-xs{padding:4px 8px;font-size:10px;}
-  /* PH wrap */
   .ph{flex-direction:column;gap:8px;}
 }
 @media(max-width:480px){
@@ -224,40 +217,30 @@ tfoot td{padding:10px 12px;font-size:12px;background:var(--s3);border-top:2px so
 .excel-tbl th{padding:9px 10px;text-align:center;font-size:11px;letter-spacing:1px;font-weight:600;white-space:nowrap;border-right:1px solid rgba(255,255,255,.06);position:sticky;top:0;z-index:2;}
 .excel-tbl td{padding:0;border-top:1px solid var(--b1);border-right:1px solid rgba(255,255,255,.04);text-align:center;vertical-align:middle;}
 .excel-tbl tr:hover td{filter:brightness(1.08);}
-/* sticky left cols */
 .col-seat{width:52px;min-width:52px;position:sticky;left:0;z-index:3;}
 .col-name{width:80px;min-width:80px;position:sticky;left:52px;z-index:3;}
 .col-total{position:sticky;right:0;z-index:3;}
 th.col-seat,th.col-name{background:#1e293b;text-align:left;padding-left:10px;}
 td.col-seat{background:#1a2236;color:var(--t3);font-family:'JetBrains Mono',monospace;font-size:12px;padding:10px;text-align:center;}
 td.col-name{background:#1c2640;font-weight:600;padding:10px 8px;text-align:left;}
-/* reg cols (homework) – white-ish */
 th.reg-col{background:#1e3a5f;color:#93c5fd;}
 td.reg-col{background:#172035;}
-/* subtotal col – blue */
 th.sub-col{background:#1e3a8a;color:#bfdbfe;}
 td.sub-col{background:#1a2d6b;font-weight:700;color:#93c5fd;font-family:'JetBrains Mono',monospace;padding:10px 8px;}
-/* exam col – green */
 th.exam-col{background:#14532d;color:#86efac;}
 td.exam-col{background:#0f2d1c;}
-/* total col – amber */
 th.col-total{background:#78350f;color:#fcd34d;text-align:center;}
 td.col-total{background:#2d1f0a;font-weight:700;color:#fcd34d;font-family:'JetBrains Mono',monospace;padding:10px 8px;}
-/* avg row */
 tr.avg-row td{background:#1e2a3a!important;color:var(--acc2);font-weight:700;font-family:'JetBrains Mono',monospace;font-size:12px;border-top:2px solid var(--b2);}
 tr.avg-row td.col-seat,tr.avg-row td.col-name{background:#1a2336!important;color:var(--t2);}
-/* grade cell input */
 .gc{width:58px;padding:7px 4px;background:transparent;border:none;color:var(--t1);font-size:13px;font-family:'JetBrains Mono',monospace;text-align:center;outline:none;display:block;margin:0 auto;}
 .gc:focus{background:rgba(59,130,246,.18);border-radius:4px;}
 .gc.has-val{color:var(--t1);}
 td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
-/* period header bar */
 .period-header-bar{padding:7px 14px;border:1px solid var(--b1);border-bottom:none;border-radius:var(--rs) var(--rs) 0 0;background:rgba(59,130,246,.06);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .hw-chip{background:rgba(59,130,246,.12);color:#93c5fd;border-radius:4px;padding:2px 9px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;}
-/* semester total tab */
 .sem-tab{display:none;}
 .sem-tab.active{display:block;}
-
 
 /* ── CLASS SUBNAV BAR ── */
 .cls-subnav{
@@ -276,7 +259,6 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
 }
 .csn-tab:hover{color:var(--t1);background:rgba(255,255,255,.03);}
 .csn-tab.active{color:var(--acc);border-bottom-color:var(--acc);}
-/* offset content when subnav visible */
 .main.has-subnav{padding-top:68px;}
 </style>
 </head>
@@ -328,13 +310,11 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
       <h2 id="stuName" style="font-size:20px;font-weight:700;"></h2>
       <p id="stuMeta" style="color:var(--t2);font-size:13px;margin-top:3px;"></p>
     </div>
-    <!-- Summary cards -->
     <div class="stu-summary">
       <div class="scard c1"><div class="sv" id="ss-reg">—</div><div class="sl">平時成績（60%）</div></div>
       <div class="scard c2"><div class="sv" id="ss-exam">—</div><div class="sl">定期考成績（40%）</div></div>
       <div class="scard c3"><div class="sv" id="ss-total">—</div><div class="sl">學期總成績</div></div>
     </div>
-    <!-- Period breakdown -->
     <div id="stuPeriods"></div>
   </div>
 </div>
@@ -349,7 +329,6 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
       <button class="btn btn-ghost btn-sm" onclick="doSignOut()">登出</button>
     </div>
   </div>
-  <!-- CLASS SUBNAV BAR -->
   <div class="cls-subnav" id="clsSubnav">
     <span class="csn-label">班級</span>
     <div class="csn-tabs" id="clsSubnavTabs"></div>
@@ -370,14 +349,12 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
 
       <!-- ── 全班成績輸入 ── -->
       <div class="page active" id="page-score">
-        <!-- Period tabs -->
         <div class="period-tabs" id="scorePeriodTabs">
           <div class="ptab active" data-period="1" onclick="scoreSelectPeriod(1,this)">第一次平時＋定期</div>
           <div class="ptab" data-period="2" onclick="scoreSelectPeriod(2,this)">第二次平時＋定期</div>
           <div class="ptab" data-period="3" onclick="scoreSelectPeriod(3,this)">第三次平時＋定期</div>
           <div class="ptab" data-period="0" onclick="scoreSelectPeriod(0,this)">📊 學期總分</div>
         </div>
-        <!-- weight bar removed, now inline in table -->
         <div id="scoreSheetWrap"></div>
       </div>
 
@@ -420,7 +397,6 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
 
     </div>
   </div>
-  <!-- Mobile bottom nav -->
   <nav class="mob-nav" id="mobNav">
     <button class="mob-nav-item active" data-p="score" onclick="navTo('score');mobNavActive(this)">
       <span class="mn-ico">📊</span><span class="mn-lbl">成績輸入</span>
@@ -441,7 +417,6 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
 </div>
 
 <!-- ═══════════ MODALS ═══════════ -->
-<!-- Student modal -->
 <div class="mbg hidden" id="M-stu" onclick="mbgClose(event,'M-stu')">
   <div class="modal"><h3 id="stuMT">新增學生</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
@@ -453,7 +428,6 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
   </div>
 </div>
 
-<!-- Import modal -->
 <div class="mbg hidden" id="M-import" onclick="mbgClose(event,'M-import')">
   <div class="modal" style="max-width:540px;"><h3>📋 批次匯入學生</h3>
     <div id="importClsHint" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:var(--rs);padding:7px 12px;font-size:12px;color:var(--acc);font-family:'JetBrains Mono',monospace;margin-bottom:10px;"></div>
@@ -464,7 +438,6 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
   </div>
 </div>
 
-<!-- Class modal -->
 <div class="mbg hidden" id="M-cls" onclick="mbgClose(event,'M-cls')">
   <div class="modal" style="max-width:340px;"><h3>新增班級</h3>
     <div class="fg" style="margin-bottom:2px;"><label>班級名稱</label><input type="text" id="clsName" placeholder="例：805"></div>
@@ -472,7 +445,6 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
   </div>
 </div>
 
-<!-- Rebind modal -->
 <div class="mbg hidden" id="M-rebind" onclick="mbgClose(event,'M-rebind')">
   <div class="modal" style="max-width:380px;"><h3>修改綁定帳號</h3>
     <p style="color:var(--t2);font-size:13px;margin-bottom:14px;">修改後學生下次登入即生效。</p>
@@ -482,7 +454,6 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
   </div>
 </div>
 
-<!-- Simulate modal -->
 <div class="mbg hidden" id="M-sim" onclick="mbgClose(event,'M-sim')">
   <div class="modal" style="max-width:400px;"><h3>👁 模擬學生視角</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:2px;">
@@ -493,16 +464,17 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
   </div>
 </div>
 
-<!-- Sim banner -->
 <div id="simBanner" class="hidden">
   <span style="color:var(--ylw);font-size:13px;font-weight:600;">👁 模擬視角：<span id="simBannerName"></span></span>
   <button class="btn btn-sm" style="margin-left:auto;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.4);color:var(--ylw);" onclick="endSim()">✕ 結束模擬</button>
 </div>
 
 <div class="toast" id="toast"></div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbOut, onAuthStateChanged }
+// ✅ 修正：改用 signInWithRedirect + getRedirectResult，移除 signInWithPopup
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut as fbOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import {
   getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc,
@@ -534,18 +506,29 @@ const cm = id => $(id).classList.add("hidden");
 window.cm = cm;
 window.mbgClose = (e,id) => { if(e.target===$(id)) cm(id); };
 
-/* scoring constants */
-const PERIOD_WEIGHT = 20;   // each of 3 periods = 20% of final
-const EXAM_WEIGHT   = 40/3; // each of 3 exams   = ~13.33% of final
+const PERIOD_WEIGHT = 20;
+const EXAM_WEIGHT   = 40/3;
 
 let ME = null, classes = [], stuCache = [];
 
 /* ══════════════════ AUTH ══════════════════ */
+
+// ✅ 修正：改用 signInWithRedirect（支援 WebView / App 內嵌瀏覽器）
 window.doSignIn = async () => {
-  try { await signInWithPopup(auth, prov); }
-  catch(e){ $("loginErr").textContent="登入失敗："+e.message; }
+  try {
+    await signInWithRedirect(auth, prov);
+  } catch(e) {
+    $("loginErr").textContent = "登入失敗：" + e.message;
+  }
 };
+
 window.doSignOut = () => fbOut(auth);
+
+// ✅ 修正：頁面載入時處理 redirect 回來的登入結果
+getRedirectResult(auth).catch(e => {
+  const el = $("loginErr");
+  if(el) el.textContent = "登入失敗：" + e.message;
+});
 
 onAuthStateChanged(auth, async user => {
   ME = user;
@@ -556,8 +539,7 @@ onAuthStateChanged(auth, async user => {
     $("adminNm").textContent = user.displayName||user.email;
     await loadStuCache();
     populateSelects();
-    showClsSubnav(scoreSelectClass); // default page is score
-    // pre-init class vars from first class
+    showClsSubnav(scoreSelectClass);
     if(classes.length){
       stuCurrentClass  = classes[0].name;
       bindCurrentClass = classes[0].name;
@@ -605,7 +587,6 @@ function populateSelects(){
   if($("simCls")) $("simCls").innerHTML = opts;
 }
 
-/* ── Class button renderer ── */
 function renderClsBtns(containerId, onSelect){
   const wrap = $(containerId); if(!wrap) return;
   wrap.innerHTML = "";
@@ -625,15 +606,12 @@ function renderClsBtns(containerId, onSelect){
 }
 window.renderClsBtns = renderClsBtns;
 
-/* ── unified class subnav ── */
 function showClsSubnav(onSelect){
   const subnav = $("clsSubnav");
   const tabs   = $("clsSubnavTabs");
   if(!subnav||!tabs) return;
   subnav.classList.add("visible");
   $("adminMain").classList.add("has-subnav");
-
-  // Build tabs using DOM (no inline onclick = no quote issues)
   tabs.innerHTML = "";
   classes.forEach((cls, i) => {
     const btn = document.createElement("div");
@@ -647,8 +625,6 @@ function showClsSubnav(onSelect){
     });
     tabs.appendChild(btn);
   });
-
-  // Auto-select first
   if(classes.length){
     onSelect(classes[0].name, tabs.querySelector(".csn-tab"));
   }
@@ -658,7 +634,6 @@ function hideClsSubnav(){
   const m=$("adminMain");      if(m) m.classList.remove("has-subnav");
 }
 
-
 /* ══════════════════ SCORE ENTRY ══════════════════ */
 let scoreCurrentClass = "";
 let scoreCurrentPeriod = 1;
@@ -666,7 +641,7 @@ let stuCurrentClass  = "";
 let bindCurrentClass = "";
 window.stuSelectClass  = (name) => { stuCurrentClass  = name; loadStuList(); };
 window.bindSelectClass = (name) => { bindCurrentClass = name; loadBindList(); };
-let _scoreItems = []; // cache items for current view
+let _scoreItems = [];
 
 window.scoreSelectClass = (name, el) => {
   scoreCurrentClass = name;
@@ -680,7 +655,6 @@ window.scoreSelectPeriod = (period, el) => {
   else renderScoreSheet();
 };
 
-/* ── helpers ── */
 function scoreColor(v){return v>=80?"var(--grn)":v>=60?"var(--ylw)":"var(--red)";}
 function fmtScore(v){return v!==null&&v!==undefined&&v!==""?'<span style="color:'+scoreColor(Number(v))+'">'+Number(v).toFixed(Number.isInteger(Number(v))?0:1)+'</span>':"<span style='color:var(--t3)'>—</span>";}
 function calcPeriodScore(hwScores, items){
@@ -714,7 +688,6 @@ async function renderScoreSheet(){
     return;
   }
 
-  // ── header bar ──
   const hwChips = items.map(it=>'<span class="hw-chip">'+it.name+' <span style="opacity:.6">'+it.weight+'%</span></span>').join("");
   const headerBar = '<div class="period-header-bar">'
     +'<span style="font-size:11px;color:var(--t2);font-weight:600;">📋 平時細項：</span>'
@@ -723,7 +696,6 @@ async function renderScoreSheet(){
     +'<button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="saveAllScores()">💾 儲存全班成績</button>'
     +'</div>';
 
-  // ── thead ──
   let thead = '<tr>'
     +'<th class="col-seat reg-col" style="background:#1e293b;color:var(--t2);">座號</th>'
     +'<th class="col-name reg-col" style="background:#1e293b;color:var(--t2);">姓名</th>';
@@ -733,14 +705,13 @@ async function renderScoreSheet(){
   thead+='<th class="col-total">第'+period+'次總分</th>';
   thead+='</tr>';
 
-  // ── rows ──
-  const totalCols = items.length + 3; // hw + subtotal + exam + total (total is sticky so nav skips it)
+  const totalCols = items.length + 3;
   let rows="";
   stus.forEach((s,rowIdx)=>{
     const sc=scMap[s.id]||{}, hw=sc.hw||{};
     const examVal=sc.exam!==undefined&&sc.exam!==null?sc.exam:"";
     const pScore=calcPeriodScore(hw,items);
-    const tScore=pScore!==null&&examVal!==""?(pScore*0.6+Number(examVal)*0.4):null; // simplified display
+    const tScore=pScore!==null&&examVal!==""?(pScore*0.6+Number(examVal)*0.4):null;
 
     let hwCells="";
     items.forEach((it,ci)=>{
@@ -767,7 +738,6 @@ async function renderScoreSheet(){
       +'</tr>';
   });
 
-  // ── avg row ──
   let avgCells="";
   items.forEach((_,i)=>{avgCells+='<td id="avgHw'+i+'" class="reg-col">—</td>';});
   avgCells+='<td id="avgPeriod" class="sub-col">—</td>';
@@ -787,7 +757,6 @@ async function renderScoreSheet(){
   calcAllAvg();
 }
 
-/* ── 학期總分 sheet ── */
 async function renderSemesterSheet(){
   const cls=scoreCurrentClass;
   if(!cls) return;
@@ -798,7 +767,6 @@ async function renderSemesterSheet(){
   const stus=stuSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.seat-b.seat);
   if(!stus.length){wrap.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);">尚無學生</div>';return;}
 
-  // load all 3 periods scores + configs
   const allData=await Promise.all([1,2,3].map(async p=>{
     const [cfg,sc]=await Promise.all([
       getDoc(doc(db,"periodConfig",cls+"_"+p)),
@@ -846,18 +814,15 @@ async function renderSemesterSheet(){
     +'</tr></tfoot></table></div>';
 }
 
-/* ── input handlers ── */
 window.onGcInput = (el) => {
   const sid=el.dataset.sid;
   if(el.dataset.exam){
-    // update total display
     const pCell=$("pdisp-"+sid);
     const pScore=pCell?parseFloat(pCell.querySelector("[style]")?.textContent)||null:null;
     const eVal=el.value!==""?Number(el.value):null;
     const tCell=$("tdisp-"+sid);
     if(tCell) tCell.innerHTML=fmtScore(pScore!==null&&eVal!==null?(pScore*0.6+eVal*0.4):null);
   } else {
-    // recalc period score for this student
     const hwInputs=document.querySelectorAll('.gc[data-sid="'+sid+'"]:not([data-exam])');
     let ws=0,wss=0;
     hwInputs.forEach(inp=>{
@@ -868,7 +833,6 @@ window.onGcInput = (el) => {
     const pScore=ws>0?wss/100:null;
     const pCell=$("pdisp-"+sid);
     if(pCell) pCell.innerHTML=fmtScore(pScore);
-    // update total
     const examInp=document.querySelector('.gc[data-sid="'+sid+'"][data-exam]');
     const eVal=examInp&&examInp.value!==""?Number(examInp.value):null;
     const tCell=$("tdisp-"+sid);
@@ -877,7 +841,6 @@ window.onGcInput = (el) => {
   calcAllAvg();
 };
 
-/* ── arrow key navigation ── */
 window.onGcKey = (e, el) => {
   const row=parseInt(el.dataset.row), col=parseInt(el.dataset.col), tc=parseInt(el.dataset.totalcols);
   let nr=row,nc=col;
@@ -891,20 +854,16 @@ window.onGcKey = (e, el) => {
 };
 
 function calcAllAvg(){
-  // per hw col averages
   _scoreItems.forEach((_,i)=>{
     const vals=[...document.querySelectorAll('.gc[data-idx="'+i+'"]')].filter(el=>el.value!=="").map(el=>Number(el.value));
     const el=$("avgHw"+i);if(el) el.textContent=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1):"—";
   });
-  // period subtotal avg
   const pVals=[...document.querySelectorAll("[id^='pdisp-']")].map(d=>{
     const sp=d.querySelector("[style*='color']");return sp?parseFloat(sp.textContent):null;
   }).filter(v=>v!==null);
   const ap=$("avgPeriod");if(ap) ap.textContent=pVals.length?(pVals.reduce((a,b)=>a+b,0)/pVals.length).toFixed(1):"—";
-  // exam avg
   const eVals=[...document.querySelectorAll('.gc[data-exam]')].filter(el=>el.value!=="").map(el=>Number(el.value));
   const ae=$("avgExam");if(ae) ae.textContent=eVals.length?(eVals.reduce((a,b)=>a+b,0)/eVals.length).toFixed(1):"—";
-  // total avg
   const tVals=[...document.querySelectorAll("[id^='tdisp-']")].map(d=>{
     const sp=d.querySelector("[style*='color']");return sp?parseFloat(sp.textContent):null;
   }).filter(v=>v!==null);
@@ -1023,7 +982,6 @@ async function showStudentView(user, binding){
     const sc = scSnap.exists() ? scSnap.data() : {};
     const hwScores = sc.hw || {};
 
-    // calc period score
     let wsum=0, wscore=0;
     items.forEach((item,i)=>{
       const v = hwScores[i];
@@ -1062,7 +1020,6 @@ async function showStudentView(user, binding){
     );
   }
 
-  // compute totals
   const avgReg  = regCount  ? totalRegScore/regCount   : null;
   const avgExam = examCount ? totalExamScore/examCount : null;
   const finalScore = (avgReg!==null&&avgExam!==null) ? (avgReg*0.6 + avgExam*0.4) : null;
@@ -1072,8 +1029,6 @@ async function showStudentView(user, binding){
   $("ss-total").textContent = finalScore !== null ? finalScore.toFixed(1) : "—";
   $("stuPeriods").innerHTML = periodsHtml.join("");
 }
-
-// scoreColor already defined above
 
 /* ══════════════════ BINDING ══════════════════ */
 async function getBinding(uid){
@@ -1166,10 +1121,8 @@ async function loadStuList(){
 }
 window.loadStuList = loadStuList;
 
-/* ── Import ── */
 window.openImportModal = () => {
   $("importTxt").value=""; $("importResult").innerHTML="";
-  // Show which class we're importing into
   const cls = stuCurrentClass||"（請先在上方選班級）";
   $("importClsHint").textContent = "匯入班級："+cls;
   $("M-import").classList.remove("hidden");
@@ -1182,7 +1135,6 @@ window.runImport = async () => {
   const batch=writeBatch(db); let ok=0,fail=0,html="";
   for(const line of lines){
     const p=line.trim().split(/\s+/);
-    // Accept "座號 姓名" (2 cols, class from subnav) or "座號 姓名 班級" (3 cols)
     if(p.length<2){ html+='<div style="color:var(--red)">✕ 格式錯誤：'+line+'</div>'; fail++; continue; }
     const seat=parseInt(p[0]), name=p[1], targetCls=p[2]||cls;
     if(!seat||!name){ html+='<div style="color:var(--red)">✕ 資料有誤：'+line+'</div>'; fail++; continue; }
@@ -1239,7 +1191,6 @@ window.saveCls=async()=>{
   toast("已新增 "+name); cm("M-cls");
   await loadClasses(); populateSelects();
   renderClsList();
-  // refresh subnav if visible
   if($("clsSubnav").classList.contains("visible") && window._clsSubnavCallback) showClsSubnav(window._clsSubnavCallback);
 };
 window.deleteCls=async(id,name)=>{
@@ -1247,7 +1198,6 @@ window.deleteCls=async(id,name)=>{
   await deleteDoc(doc(db,"classes",id)); toast("已刪除");
   await loadClasses(); populateSelects();
   renderClsList();
-  // refresh subnav if visible
   if($("clsSubnav").classList.contains("visible") && window._clsSubnavCallback) showClsSubnav(window._clsSubnavCallback);
 };
 function renderClsList(){
