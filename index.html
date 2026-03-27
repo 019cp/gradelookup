@@ -254,6 +254,8 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
 /* period header bar */
 .period-header-bar{padding:7px 14px;border:1px solid var(--b1);border-bottom:none;border-radius:var(--rs) var(--rs) 0 0;background:rgba(59,130,246,.06);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .hw-chip{background:rgba(59,130,246,.12);color:#93c5fd;border-radius:4px;padding:2px 9px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.hw-chip-btn{background:rgba(59,130,246,.1);color:#93c5fd;border:1px solid rgba(59,130,246,.25);border-radius:4px;padding:3px 10px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.hw-chip-btn:hover{background:rgba(59,130,246,.22);border-color:rgba(59,130,246,.5);transform:translateY(-1px);}
 /* semester total tab */
 .sem-tab{display:none;}
 .sem-tab.active{display:block;}
@@ -499,6 +501,27 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
   <button class="btn btn-sm" style="margin-left:auto;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.4);color:var(--ylw);" onclick="endSim()">✕ 結束模擬</button>
 </div>
 
+
+<!-- Paste Scores Modal -->
+<div class="mbg hidden" id="M-paste" onclick="mbgClose(event,'M-paste')">
+  <div class="modal" style="max-width:480px;">
+    <h3>📥 貼上成績</h3>
+    <div id="pasteHint" style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:var(--rs);padding:8px 12px;font-size:12px;color:var(--acc2);margin-bottom:12px;font-family:'JetBrains Mono',monospace;"></div>
+    <p style="color:var(--t2);font-size:12px;margin-bottom:10px;line-height:1.9;">
+      從 Excel 複製兩欄：<code style="color:var(--acc);">座號　分數</code>，每行一筆<br>
+      <span style="color:var(--t3);">例：</span><code style="color:var(--acc2);">1　85<br>　　2　92<br>　　3　78</code>
+    </p>
+    <div class="fg" style="margin-bottom:10px;">
+      <label>貼上資料（座號 + 分數）</label>
+      <textarea id="pasteTxt" rows="10" style="resize:vertical;font-family:'JetBrains Mono',monospace;font-size:13px;padding:8px 10px;background:var(--bg);border:1px solid var(--b1);border-radius:var(--rs);color:var(--t1);outline:none;width:100%;tab-size:4;" placeholder="1	85&#10;2	92&#10;3	78"></textarea>
+    </div>
+    <div id="pastePreview" style="max-height:120px;overflow-y:auto;font-size:12px;font-family:'JetBrains Mono',monospace;"></div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="cm('M-paste')">取消</button>
+      <button class="btn btn-primary" onclick="applyPasteScores()">✓ 套用到表格</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
@@ -911,6 +934,66 @@ function calcAllAvg(){
   const at=$("avgTotal");if(at) at.textContent=tVals.length?(tVals.reduce((a,b)=>a+b,0)/tVals.length).toFixed(1):"—";
 }
 
+
+/* ══════════════════ PASTE SCORES ══════════════════ */
+let _pasteItemIdx = -1;
+
+window.openPasteModal = (idx, name) => {
+  _pasteItemIdx = idx;
+  $("pasteHint").textContent = "作業：" + name + "（第" + scoreCurrentPeriod + "次平時 · " + scoreCurrentClass + "班）";
+  $("pasteTxt").value = "";
+  $("pastePreview").innerHTML = "";
+  $("M-paste").classList.remove("hidden");
+  setTimeout(()=>$("pasteTxt").focus(), 100);
+};
+
+window.applyPasteScores = () => {
+  const raw = $("pasteTxt").value.trim();
+  if(!raw){ toast("請貼上資料","err"); return; }
+
+  // Parse: seat	score or seat,score or seat score
+  const lines = raw.split(/\n/).map(l=>l.trim()).filter(l=>l);
+  const parsed = [];
+  let errCount = 0;
+  lines.forEach(line=>{
+    const parts = line.split(/\t|,|\s+/);
+    const seat = parseInt(parts[0]);
+    const score = parseFloat(parts[1]);
+    if(isNaN(seat)||isNaN(score)){ errCount++; return; }
+    parsed.push({seat, score});
+  });
+
+  if(!parsed.length){ toast("無法解析資料，請確認格式","err"); return; }
+
+  // Match seat → student row → fill input
+  let filled = 0, notFound = 0;
+  const seatMap = {}; // seat → input element
+  document.querySelectorAll('.gc[data-idx="'+_pasteItemIdx+'"]').forEach(inp=>{
+    const row = inp.closest("tr");
+    const seatCell = row?.querySelector(".col-seat");
+    if(seatCell) seatMap[parseInt(seatCell.textContent)] = inp;
+  });
+
+  parsed.forEach(({seat, score})=>{
+    const inp = seatMap[seat];
+    if(inp){
+      inp.value = score;
+      inp.classList.add("filled");
+      onGcInput(inp);
+      filled++;
+    } else { notFound++; }
+  });
+
+  let preview = '<div style="margin-bottom:4px;color:var(--grn);">✓ 套用 '+filled+' 筆</div>';
+  if(notFound) preview += '<div style="color:var(--ylw);">找不到座號：'+notFound+' 筆</div>';
+  $("pastePreview").innerHTML = preview;
+
+  if(filled > 0){
+    toast("已套用 "+filled+" 筆成績，記得儲存！");
+    setTimeout(()=>cm("M-paste"), 1200);
+  }
+};
+
 window.saveAllScores = async () => {
   const cls=scoreCurrentClass, period=scoreCurrentPeriod;
   if(period===0){toast("學期總分頁無法儲存，請至各次輸入","err");return;}
@@ -1196,24 +1279,39 @@ window.runImport = async () => {
 
 /* ══════════════════ BINDINGS ══════════════════ */
 async function loadBindList(){
-  const fcls=$("bindFilter")?.value||"";
-  const bSnap=await getDocs(collection(db,"bindings"));
-  const binds=bSnap.docs.map(d=>({uid:d.id,...d.data()}));
-  const filtered=fcls?binds.filter(b=>b.className===fcls):binds;
-  const tbody=$("bindTbody");
-  if(!filtered.length){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--t3);padding:24px;">尚無綁定</td></tr>'; return; }
-  tbody.innerHTML=filtered.map(b=>{
-    const dt=b.boundAt?.toDate?.()?.toLocaleDateString("zh-TW")||"—";
-    return '<tr><td class="mono" style="color:var(--t3);">'+b.seat+'</td>'
+  const cls = bindCurrentClass||"";
+  const bSnap = await getDocs(collection(db,"bindings"));
+  const binds = bSnap.docs.map(d=>({uid:d.id,...d.data()}));
+  const clsOrder = classes.map(c=>c.name);
+  const filtered = (cls ? binds.filter(b=>b.className===cls) : binds)
+    .sort((a,b)=>{
+      const ci = clsOrder.indexOf(a.className) - clsOrder.indexOf(b.className);
+      return ci !== 0 ? ci : (a.seat||0) - (b.seat||0);
+    });
+  const tbody = $("bindTbody"); if(!tbody) return;
+  if(!filtered.length){
+    tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--t3);padding:24px;">此班尚無綁定記錄</td></tr>';
+    return;
+  }
+  tbody.innerHTML="";
+  filtered.forEach(b=>{
+    const dt = b.boundAt?.toDate?.()?.toLocaleDateString("zh-TW")||"—";
+    const tr = document.createElement("tr");
+    tr.innerHTML='<td class="mono" style="color:var(--t3);">'+String(b.seat||0).padStart(2,"0")+'</td>'
       +'<td><strong>'+b.name+'</strong></td>'
       +'<td><span class="badge bb">'+b.className+'</span></td>'
-      +'<td style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--acc2);">'+b.email+'</td>'
-      +'<td style="color:var(--t3);font-size:12px;">'+dt+'</td>'
-      +'<td style="display:flex;gap:6px;">'
-      +'<button class="btn btn-ghost btn-xs" onclick="openRebind(\''+b.uid+'\',\''+b.email+'\')">修改</button>'
-      +'<button class="btn btn-danger btn-xs" onclick="removeBind(\''+b.uid+'\',\''+b.name+'\')">移除</button>'
-      +'</td></tr>';
-  }).join("");
+      +'<td style="max-width:220px;">'
+        +'<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--acc2);word-break:break-all;">'+b.email+'</div>'
+        +'<div style="font-size:10px;color:var(--t3);margin-top:2px;">綁定於 '+dt+'</div>'
+      +'</td>'
+      +'<td style="display:flex;gap:5px;flex-wrap:wrap;"></td>';
+    const bc=tr.querySelector("td:last-child");
+    const mb=document.createElement("button"); mb.className="btn btn-ghost btn-xs"; mb.textContent="修改";
+    mb.addEventListener("click",()=>openRebind(b.uid,b.email));
+    const rb=document.createElement("button"); rb.className="btn btn-danger btn-xs"; rb.textContent="🗑 解除";
+    rb.addEventListener("click",()=>removeBind(b.uid,b.name));
+    bc.appendChild(mb); bc.appendChild(rb); tbody.appendChild(tr);
+  });
 }
 window.loadBindList=loadBindList;
 window.removeBind=async(uid,name)=>{
