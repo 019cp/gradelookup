@@ -504,19 +504,30 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
 
 <!-- Paste Scores Modal -->
 <div class="mbg hidden" id="M-paste" onclick="mbgClose(event,'M-paste')">
-  <div class="modal" style="max-width:480px;">
+  <div class="modal" style="max-width:500px;">
     <h3>📥 貼上成績</h3>
     <div id="pasteHint" style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:var(--rs);padding:8px 12px;font-size:12px;color:var(--acc2);margin-bottom:12px;font-family:'JetBrains Mono',monospace;"></div>
-    <p style="color:var(--t2);font-size:12px;margin-bottom:10px;line-height:1.9;">
-      從 Excel 複製兩欄：<code style="color:var(--acc);">座號　分數</code>，每行一筆<br>
-      <span style="color:var(--t3);">例：</span><code style="color:var(--acc2);">1　85<br>　　2　92<br>　　3　78</code>
-    </p>
-    <div class="fg" style="margin-bottom:10px;">
-      <label>貼上資料（座號 + 分數）</label>
-      <textarea id="pasteTxt" rows="10" style="resize:vertical;font-family:'JetBrains Mono',monospace;font-size:13px;padding:8px 10px;background:var(--bg);border:1px solid var(--b1);border-radius:var(--rs);color:var(--t1);outline:none;width:100%;tab-size:4;" placeholder="1	85&#10;2	92&#10;3	78"></textarea>
+
+    <!-- Mode toggle -->
+    <div style="display:flex;gap:0;border:1px solid var(--b2);border-radius:var(--rs);overflow:hidden;margin-bottom:14px;">
+      <button id="pasteModeSeat" onclick="setPasteMode('seat')"
+        style="flex:1;padding:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:var(--acc);color:#fff;font-family:'Noto Sans TC',sans-serif;transition:all .15s;">
+        📋 座號模式<br><span style="font-size:10px;font-weight:400;opacity:.85;">座號 + 分數，依座號對應</span>
+      </button>
+      <button id="pasteModeSeq" onclick="setPasteMode('seq')"
+        style="flex:1;padding:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:var(--s3);color:var(--t2);font-family:'Noto Sans TC',sans-serif;transition:all .15s;">
+        🔢 順序模式<br><span style="font-size:10px;font-weight:400;opacity:.85;">只貼分數，依表格順序填入</span>
+      </button>
     </div>
-    <div id="pastePreview" style="max-height:120px;overflow-y:auto;font-size:12px;font-family:'JetBrains Mono',monospace;"></div>
-    <div class="mfoot">
+
+    <div id="pasteModeDesc" style="color:var(--t3);font-size:11px;margin-bottom:8px;line-height:1.8;"></div>
+
+    <div class="fg" style="margin-bottom:10px;">
+      <label id="pasteTxtLabel">貼上資料</label>
+      <textarea id="pasteTxt" rows="10" style="resize:vertical;font-family:'JetBrains Mono',monospace;font-size:13px;padding:8px 10px;background:var(--bg);border:1px solid var(--b1);border-radius:var(--rs);color:var(--t1);outline:none;width:100%;tab-size:4;"></textarea>
+    </div>
+    <div id="pastePreview" style="max-height:130px;overflow-y:auto;font-size:12px;font-family:'JetBrains Mono',monospace;background:var(--s2);border-radius:4px;padding:6px 10px;display:none;"></div>
+    <div class="mfoot" style="margin-top:14px;">
       <button class="btn btn-ghost" onclick="cm('M-paste')">取消</button>
       <button class="btn btn-primary" onclick="applyPasteScores()">✓ 套用到表格</button>
     </div>
@@ -955,13 +966,34 @@ function calcAllAvg(){
 
 /* ══════════════════ PASTE SCORES ══════════════════ */
 let _pasteItemIdx = -1;
+let _pasteMode = 'seat';
+
+window.setPasteMode = (mode) => {
+  _pasteMode = mode;
+  const isSeat = mode === 'seat';
+  $("pasteModeSeat").style.background = isSeat ? "var(--acc)" : "var(--s3)";
+  $("pasteModeSeat").style.color      = isSeat ? "#fff" : "var(--t2)";
+  $("pasteModeSeq").style.background  = isSeat ? "var(--s3)" : "var(--acc)";
+  $("pasteModeSeq").style.color       = isSeat ? "var(--t2)" : "#fff";
+  if(isSeat){
+    $("pasteModeDesc").textContent = "格式：座號＋分數，每行一筆（支援 Tab、逗號、空格）";
+    $("pasteTxtLabel").textContent = "貼上資料（座號＋分數）";
+    $("pasteTxt").placeholder = "1\t85\n2\t92\n3\t78";
+  } else {
+    $("pasteModeDesc").textContent = "只貼分數，依表格由上到下順序自動填入，座號請自行確認";
+    $("pasteTxtLabel").textContent = "貼上分數（每行一個，或空格/Tab 分隔）";
+    $("pasteTxt").placeholder = "85\n92\n78\n...";
+  }
+};
 
 window.openPasteModal = (idx, name) => {
   _pasteItemIdx = idx;
-  $("pasteHint").textContent = "作業：" + name + "（第" + scoreCurrentPeriod + "次平時 · " + scoreCurrentClass + "班）";
+  $("pasteHint").textContent = "作業：" + name + "（第" + scoreCurrentPeriod + "次 · " + scoreCurrentClass + "班）";
   $("pasteTxt").value = "";
+  $("pastePreview").style.display = "none";
   $("pastePreview").innerHTML = "";
   $("M-paste").classList.remove("hidden");
+  setPasteMode(_pasteMode);
   setTimeout(()=>$("pasteTxt").focus(), 100);
 };
 
@@ -969,49 +1001,69 @@ window.applyPasteScores = () => {
   const raw = $("pasteTxt").value.trim();
   if(!raw){ toast("請貼上資料","err"); return; }
 
-  // Parse: seat	score or seat,score or seat score
-  const lines = raw.split(/\n/).map(l=>l.trim()).filter(l=>l);
-  const parsed = [];
-  let errCount = 0;
-  lines.forEach(line=>{
-    const parts = line.split(/\t|,|\s+/);
-    const seat = parseInt(parts[0]);
-    const score = parseFloat(parts[1]);
-    if(isNaN(seat)||isNaN(score)){ errCount++; return; }
-    parsed.push({seat, score});
-  });
+  const allInputs = [...document.querySelectorAll('.gc[data-idx="'+_pasteItemIdx+'"]')];
+  let filled = 0, previewItems = "", warnings = "";
 
-  if(!parsed.length){ toast("無法解析資料，請確認格式","err"); return; }
+  if(_pasteMode === 'seq'){
+    // ── 順序模式：全部數字依序填入 ──
+    const tokens = raw.split(/[\n\t, ]+/).map(t=>t.trim()).filter(t=>t!=="");
+    const scores = tokens.map(t=>parseFloat(t)).filter(t=>!isNaN(t));
+    if(!scores.length){ toast("找不到有效分數","err"); return; }
 
-  // Match seat → student row → fill input
-  let filled = 0, notFound = 0;
-  const seatMap = {}; // seat → input element
-  document.querySelectorAll('.gc[data-idx="'+_pasteItemIdx+'"]').forEach(inp=>{
-    const row = inp.closest("tr");
-    const seatCell = row?.querySelector(".col-seat");
-    if(seatCell) seatMap[parseInt(seatCell.textContent)] = inp;
-  });
-
-  parsed.forEach(({seat, score})=>{
-    const inp = seatMap[seat];
-    if(inp){
+    scores.forEach((score, i) => {
+      if(i >= allInputs.length) return;
+      const inp = allInputs[i];
+      const tr  = inp.closest("tr");
+      const seat = parseInt(tr?.querySelector(".col-seat")?.textContent||"0");
       inp.value = score;
       inp.classList.add("filled");
       onGcInput(inp);
+      const clr = score>=80?"var(--grn)":score>=60?"var(--ylw)":"var(--red)";
+      previewItems += '<span style="display:inline-block;min-width:28px;color:var(--t3);font-size:10px;">'
+        +String(seat).padStart(2,"0")+'</span>'
+        +'<span style="color:'+clr+';font-weight:700;margin-right:14px;">'+score+'</span>';
       filled++;
-    } else { notFound++; }
-  });
+    });
+    if(scores.length > allInputs.length)
+      warnings += '<div style="color:var(--ylw);">⚠ 分數數量('+scores.length+')多於學生數('+allInputs.length+')，多餘忽略</div>';
 
-  let preview = '<div style="margin-bottom:4px;color:var(--grn);">✓ 套用 '+filled+' 筆</div>';
-  if(notFound) preview += '<div style="color:var(--ylw);">找不到座號：'+notFound+' 筆</div>';
-  $("pastePreview").innerHTML = preview;
+  } else {
+    // ── 座號模式 ──
+    const seatMap = {};
+    allInputs.forEach(inp=>{
+      const tr = inp.closest("tr");
+      const seat = parseInt(tr?.querySelector(".col-seat")?.textContent||"0");
+      seatMap[seat] = inp;
+    });
+    let notFound = 0;
+    raw.split(/\n/).map(l=>l.trim()).filter(l=>l).forEach(line=>{
+      const p = line.split(/\t|,|\s+/);
+      const seat = parseInt(p[0]), score = parseFloat(p[1]);
+      if(isNaN(seat)||isNaN(score)) return;
+      const inp = seatMap[seat];
+      if(inp){
+        inp.value = score; inp.classList.add("filled"); onGcInput(inp);
+        const clr = score>=80?"var(--grn)":score>=60?"var(--ylw)":"var(--red)";
+        previewItems += '<span style="display:inline-block;min-width:28px;color:var(--t3);font-size:10px;">'
+          +String(seat).padStart(2,"0")+'</span>'
+          +'<span style="color:'+clr+';font-weight:700;margin-right:14px;">'+score+'</span>';
+        filled++;
+      } else { notFound++; }
+    });
+    if(notFound) warnings += '<div style="color:var(--ylw);">找不到座號：'+notFound+' 筆</div>';
+  }
+
+  const prev = $("pastePreview");
+  prev.innerHTML = '<div style="color:var(--grn);font-weight:600;margin-bottom:6px;">✓ 已套用 '+filled+' 筆</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:2px 0;line-height:2;">'+previewItems+'</div>'
+    +warnings;
+  prev.style.display = "block";
 
   if(filled > 0){
-    toast("已套用 "+filled+" 筆成績，記得儲存！");
-    setTimeout(()=>cm("M-paste"), 1200);
+    toast("已套用 "+filled+" 筆，記得儲存！");
+    setTimeout(()=>cm("M-paste"), 1800);
   }
 };
-
 window.saveAllScores = async () => {
   const cls=scoreCurrentClass, period=scoreCurrentPeriod;
   if(period===0){toast("學期總分頁無法儲存，請至各次輸入","err");return;}
