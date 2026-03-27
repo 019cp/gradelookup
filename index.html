@@ -737,15 +737,33 @@ async function renderScoreSheet(){
     return;
   }
 
-  // ── header bar ──
-  const hwChips = items.map(it=>'<span class="hw-chip">'+it.name+' <span style="opacity:.6">'+it.weight+'%</span></span>').join("");
-  const headerBar = '<div class="period-header-bar">'
-    +'<span style="font-size:11px;color:var(--t2);font-weight:600;">📋 平時細項：</span>'
-    +hwChips
-    +'<button class="btn btn-ghost btn-sm" style="margin-left:4px;font-size:11px;" onclick="navTo(\'periods\')">＋ 編輯作業</button>'
-    +'<button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="saveAllScores()">💾 儲存全班成績</button>'
-    +'</div>';
-
+  // ── header bar (DOM-built for safe event listeners) ──
+  const _hbar = document.createElement('div');
+  _hbar.className = 'period-header-bar';
+  const _hlbl = document.createElement('span');
+  _hlbl.style.cssText = 'font-size:11px;color:var(--t2);font-weight:600;';
+  _hlbl.textContent = '點擊作業名稱可貼上成績：';
+  _hbar.appendChild(_hlbl);
+  items.forEach((it, i) => {
+    const _chip = document.createElement('button');
+    _chip.className = 'hw-chip-btn';
+    _chip.innerHTML = '📥 ' + it.name + ' <span style="opacity:.5">' + it.weight + '%</span>';
+    _chip.title = '從 Excel 貼上「' + it.name + '」成績';
+    _chip.addEventListener('click', ((idx, nm) => () => openPasteModal(idx, nm))(i, it.name));
+    _hbar.appendChild(_chip);
+  });
+  const _editBtn = document.createElement('button');
+  _editBtn.className = 'btn btn-ghost btn-sm';
+  _editBtn.style.cssText = 'margin-left:4px;font-size:11px;';
+  _editBtn.textContent = '＋ 編輯作業';
+  _editBtn.addEventListener('click', () => navTo('periods'));
+  _hbar.appendChild(_editBtn);
+  const _saveBtn = document.createElement('button');
+  _saveBtn.className = 'btn btn-primary btn-sm';
+  _saveBtn.style.cssText = 'margin-left:auto;';
+  _saveBtn.textContent = '💾 儲存全班';
+  _saveBtn.addEventListener('click', () => saveAllScores());
+  _hbar.appendChild(_saveBtn);
   // ── thead ──
   let thead = '<tr>'
     +'<th class="col-seat reg-col" style="background:#1e293b;color:var(--t2);">座號</th>'
@@ -797,8 +815,7 @@ async function renderScoreSheet(){
   avgCells+='<td id="avgExam" class="exam-col">—</td>';
   avgCells+='<td id="avgTotal" class="col-total">—</td>';
 
-  wrap.innerHTML = headerBar
-    +'<div class="grade-scroll"><table class="excel-tbl">'
+  wrap.innerHTML = '<div class="grade-scroll"><table class="excel-tbl">'
     +'<thead>'+thead+'</thead>'
     +'<tbody>'+rows+'</tbody>'
     +'<tfoot><tr class="avg-row">'
@@ -806,6 +823,7 @@ async function renderScoreSheet(){
     +avgCells
     +'</tr></tfoot>'
     +'</table></div>';
+  wrap.insertBefore(_hbar, wrap.firstChild);
 
   calcAllAvg();
 }
