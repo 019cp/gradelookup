@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>數學成績管理系統</title>
+<title>成績管理系統</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -287,7 +287,7 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
 <!-- ═══════════ LOGIN ═══════════ -->
 <div id="S-login" class="cscreen fade-up">
   <div class="abox">
-    <h1>數學成績<em>管理</em>系統</h1>
+    <h1>成績<em>管理</em>系統</h1>
     <p class="sub">請使用 Google 帳號登入</p>
     <button class="btn-google" onclick="doSignIn()">
       <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
@@ -319,7 +319,7 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
 <!-- ═══════════ STUDENT VIEW ═══════════ -->
 <div id="S-student" class="hidden">
   <div class="stu-topnav">
-    <span class="logo">數學成績<em>查詢</em></span>
+    <span class="logo">成績<em>查詢</em></span>
     <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
       <span id="stuEmail" style="font-size:12px;color:var(--t3);"></span>
       <button class="btn btn-ghost btn-sm" onclick="doSignOut()">登出</button>
@@ -763,6 +763,13 @@ async function renderScoreSheet(){
     _chip.addEventListener('click', ((idx, nm) => () => openPasteModal(idx, nm))(i, it.name));
     _hbar.appendChild(_chip);
   });
+  const _examChip = document.createElement('button');
+  _examChip.className = 'hw-chip-btn';
+  _examChip.style.cssText = 'background:rgba(34,197,94,.1);color:#86efac;border-color:rgba(34,197,94,.3);';
+  _examChip.innerHTML = '📥 定期考';
+  _examChip.title = '從 Excel 貼上定期考成績';
+  _examChip.addEventListener('click', () => openPasteModal('exam', '定期考'));
+  _hbar.appendChild(_examChip);
   const _editBtn = document.createElement('button');
   _editBtn.className = 'btn btn-ghost btn-sm';
   _editBtn.style.cssText = 'margin-left:4px;font-size:11px;';
@@ -781,7 +788,7 @@ async function renderScoreSheet(){
     +'<th class="col-name reg-col" style="background:#1e293b;color:var(--t2);">姓名</th>';
   items.forEach(it=>{ thead+='<th class="reg-col">'+it.name+'<br><small style="opacity:.65;font-weight:400;">'+it.weight+'%</small></th>'; });
   thead+='<th class="sub-col">平時小計<br><small style="opacity:.65;font-weight:400;">20%</small></th>';
-  thead+='<th class="exam-col">定期考<br><small style="opacity:.65;font-weight:400;">13.3%</small></th>';
+  thead+='<th class="exam-col" style="cursor:pointer;" title="點擊上方 📥 定期考 按鈕貼上成績">定期考<br><small style="opacity:.65;font-weight:400;">13.3%</small></th>';
   thead+='<th class="col-total">第'+period+'次總分</th>';
   thead+='</tr>';
 
@@ -1001,7 +1008,9 @@ window.applyPasteScores = () => {
   const raw = $("pasteTxt").value.trim();
   if(!raw){ toast("請貼上資料","err"); return; }
 
-  const allInputs = [...document.querySelectorAll('.gc[data-idx="'+_pasteItemIdx+'"]')];
+  const allInputs = _pasteItemIdx === 'exam'
+    ? [...document.querySelectorAll('.gc[data-exam]')]
+    : [...document.querySelectorAll('.gc[data-idx="'+_pasteItemIdx+'"]')];
   let filled = 0, previewItems = "", warnings = "";
 
   if(_pasteMode === 'seq'){
