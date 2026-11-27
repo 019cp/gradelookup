@@ -167,6 +167,11 @@ tfoot td{padding:10px 12px;font-size:12px;background:var(--s3);border-top:2px so
 .period-card .pc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--b1);}
 .period-card .pc-title{font-weight:600;font-size:14px;}
 .period-card .pc-score{font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+/* ── STUDENT STATUS BAR (live dot + updated time + refresh, one tidy row) ── */
+.stu-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--s2);border:1px solid var(--b1);border-radius:20px;padding:5px 6px 5px 14px;margin-top:12px;width:fit-content;max-width:100%;font-size:12px;color:var(--t2);}
+.stu-status #stuLiveDot{color:var(--grn);white-space:nowrap;}
+.stu-status #stuUpdatedAt{color:var(--t3);white-space:nowrap;font-family:'JetBrains Mono',monospace;font-size:11px;}
+.stu-status .stu-refresh{margin-left:auto;white-space:nowrap;}
 
 /* ── SIM BANNER ── */
 #simBanner{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(245,158,11,.15);border-bottom:2px solid var(--ylw);padding:7px 20px;display:flex;align-items:center;gap:12px;}
@@ -201,6 +206,9 @@ tfoot td{padding:10px 12px;font-size:12px;background:var(--s3);border-top:2px so
   .period-tabs{flex-wrap:wrap;}
   .ptab{font-size:11px;padding:7px 10px;}
   /* Student cards view on mobile */
+  .stu-topnav{padding:0 14px;}
+  .stu-topnav #stuEmail{display:none;}
+  .stu-status{border-radius:12px;padding:5px 6px 5px 12px;}
   .stu-summary{grid-template-columns:1fr 1fr;}
   .stu-wrap{padding:68px 14px 30px;}
   .period-card{padding:12px;}
@@ -321,9 +329,7 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
   <div class="stu-topnav">
     <span class="logo">成績<em>查詢</em></span>
     <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
-      <span id="stuLiveDot" style="font-size:11px;color:var(--grn);white-space:nowrap;">● 即時更新中</span>
       <span id="stuEmail" style="font-size:12px;color:var(--t3);"></span>
-      <button class="btn btn-ghost btn-sm" onclick="refreshStudentView()" title="重新從資料庫抓取最新成績">↻ 重新整理</button>
       <button class="btn btn-ghost btn-sm" onclick="doSignOut()">登出</button>
     </div>
   </div>
@@ -331,7 +337,11 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
     <div style="margin-bottom:18px;">
       <h2 id="stuName" style="font-size:20px;font-weight:700;"></h2>
       <p id="stuMeta" style="color:var(--t2);font-size:13px;margin-top:3px;"></p>
-      <p id="stuUpdatedAt" style="color:var(--t3);font-size:12px;margin-top:3px;">最後更新：—</p>
+      <div class="stu-status">
+        <span id="stuLiveDot">● 即時更新中</span>
+        <span id="stuUpdatedAt">最後更新：—</span>
+        <button class="btn btn-ghost btn-xs stu-refresh" onclick="refreshStudentView()" title="重新從資料庫抓取最新成績">↻ 重新整理</button>
+      </div>
     </div>
     <!-- Summary cards -->
     <div class="stu-summary">
@@ -1189,7 +1199,7 @@ function stuSetLiveDot(ok){
 }
 function stuTouchUpdated(){
   const el=$("stuUpdatedAt"); if(!el) return;
-  el.textContent="最後更新："+new Date().toLocaleString("zh-TW",{hour12:false});
+  el.textContent="最後更新 "+new Date().toLocaleTimeString("zh-TW",{hour12:false});
 }
 
 /* 依 stuLiveData 渲染學生頁（不直接讀 Firestore，監聽和手動重新整理都共用它） */
