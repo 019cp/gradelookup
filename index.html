@@ -321,7 +321,9 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
   <div class="stu-topnav">
     <span class="logo">成績<em>查詢</em></span>
     <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
+      <span id="stuLiveDot" style="font-size:11px;color:var(--grn);white-space:nowrap;">● 即時更新中</span>
       <span id="stuEmail" style="font-size:12px;color:var(--t3);"></span>
+      <button class="btn btn-ghost btn-sm" onclick="refreshStudentView()" title="重新從資料庫抓取最新成績">↻ 重新整理</button>
       <button class="btn btn-ghost btn-sm" onclick="doSignOut()">登出</button>
     </div>
   </div>
@@ -329,6 +331,7 @@ td.exam-col .gc:focus{background:rgba(34,197,94,.15);}
     <div style="margin-bottom:18px;">
       <h2 id="stuName" style="font-size:20px;font-weight:700;"></h2>
       <p id="stuMeta" style="color:var(--t2);font-size:13px;margin-top:3px;"></p>
+      <p id="stuUpdatedAt" style="color:var(--t3);font-size:12px;margin-top:3px;">最後更新：—</p>
     </div>
     <!-- Summary cards -->
     <div class="stu-summary">
@@ -540,7 +543,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbOut, onAuthS
   from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import {
   getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc,
-  query, where, orderBy, serverTimestamp, writeBatch
+  query, where, orderBy, serverTimestamp, writeBatch, onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 const FB = {
@@ -579,7 +582,7 @@ window.doSignIn = async () => {
   try { await signInWithPopup(auth, prov); }
   catch(e){ $("loginErr").textContent="登入失敗："+e.message; }
 };
-window.doSignOut = () => fbOut(auth);
+window.doSignOut = () => { stopStuLive(); fbOut(auth); };
 
 onAuthStateChanged(auth, async user => {
   ME = user;
@@ -607,6 +610,8 @@ onAuthStateChanged(auth, async user => {
 });
 
 function showScreen(s){
+  // 離開學生頁面時，取消即時監聽，避免重複訂閱 / 舊學生資料殘留
+  if(s!=="student" && typeof stopStuLive==="function") stopStuLive();
   ["S-login","S-bind","S-student","S-admin"].forEach(id=>$(id).classList.add("hidden"));
   $("S-"+s).classList.remove("hidden");
 }
@@ -1167,25 +1172,39 @@ window.savePeriodCfg = async () => {
 };
 
 /* ══════════════════ STUDENT VIEW ══════════════════ */
-async function showStudentView(user, binding){
-  $("stuEmail").textContent = user.email;
-  $("stuName").textContent = binding.name;
-  $("stuMeta").textContent = binding.className+" 班・第 "+binding.seat+" 號";
-  showScreen("student");
+/* ══════════════════ STUDENT VIEW（即時更新） ══════════════════ */
+let stuUnsubs = [];            // onSnapshot 的取消訂閱函式
+let stuCurrentBinding = null;  // 目前學生 { className, studentId, name, seat }
+let stuLiveData = { configs: {}, scores: {} };
 
-  const cls = binding.className, sid = binding.studentId;
+function stopStuLive(){
+  stuUnsubs.forEach(u=>{ try{ u(); }catch(e){} });
+  stuUnsubs = [];
+  stuCurrentBinding = null;
+}
+function stuSetLiveDot(ok){
+  const el=$("stuLiveDot"); if(!el) return;
+  if(ok){ el.textContent="● 即時更新中"; el.style.color="var(--grn)"; }
+  else  { el.textContent="● 連線中斷，請按重新整理"; el.style.color="var(--red)"; }
+}
+function stuTouchUpdated(){
+  const el=$("stuUpdatedAt"); if(!el) return;
+  el.textContent="最後更新："+new Date().toLocaleString("zh-TW",{hour12:false});
+}
+
+/* 依 stuLiveData 渲染學生頁（不直接讀 Firestore，監聽和手動重新整理都共用它） */
+function renderStudentFromLive(){
+  if(!stuCurrentBinding) return;
   let totalRegScore = 0, totalExamScore = 0;
   let regCount = 0, examCount = 0;
   const periodsHtml = [];
 
   for(let period=1; period<=3; period++){
-    const cfgSnap = await getDoc(doc(db,"periodConfig",cls+"_"+period));
-    const items = cfgSnap.exists() ? (cfgSnap.data().items||[]) : [];
-    const scSnap = await getDoc(doc(db,"scores",cls+"_"+period+"_"+sid));
-    const sc = scSnap.exists() ? scSnap.data() : {};
+    const cfg = stuLiveData.configs[period];
+    const items = cfg ? (cfg.items||[]) : [];
+    const sc = stuLiveData.scores[period] || {};
     const hwScores = sc.hw || {};
 
-    // calc period score
     let wsum=0, wscore=0;
     items.forEach((item,i)=>{
       const v = hwScores[i];
@@ -1224,7 +1243,6 @@ async function showStudentView(user, binding){
     );
   }
 
-  // compute totals
   const avgReg  = regCount  ? totalRegScore/regCount   : null;
   const avgExam = examCount ? totalExamScore/examCount : null;
   const finalScore = (avgReg!==null&&avgExam!==null) ? (avgReg*0.6 + avgExam*0.4) : null;
@@ -1233,7 +1251,72 @@ async function showStudentView(user, binding){
   $("ss-exam").textContent  = avgExam  !== null ? avgExam.toFixed(1)  : "—";
   $("ss-total").textContent = finalScore !== null ? finalScore.toFixed(1) : "—";
   $("stuPeriods").innerHTML = periodsHtml.join("");
+  stuTouchUpdated();
 }
+
+/* 開始即時監聽：3 次 periodConfig + 3 次 scores，共 6 個文件。
+   老師一按「儲存全班」或改設定，Firestore 有變動就會立刻推過來重畫。 */
+function startStuLive(binding){
+  stopStuLive(); // 先取消舊的，避免重複訂閱
+  stuCurrentBinding = binding;
+  stuLiveData = { configs: {}, scores: {} };
+  stuSetLiveDot(true);
+  const cls = binding.className, sid = binding.studentId;
+  for(let period=1; period<=3; period++){
+    stuUnsubs.push(onSnapshot(doc(db,"periodConfig",cls+"_"+period), snap=>{
+      stuLiveData.configs[period] = snap.exists() ? snap.data() : null;
+      renderStudentFromLive();
+    }, err=>{ console.error("periodConfig 監聽失敗", err); stuSetLiveDot(false); }));
+    stuUnsubs.push(onSnapshot(doc(db,"scores",cls+"_"+period+"_"+sid), snap=>{
+      stuLiveData.scores[period] = snap.exists() ? snap.data() : {};
+      renderStudentFromLive();
+    }, err=>{ console.error("scores 監聽失敗", err); stuSetLiveDot(false); }));
+  }
+  renderStudentFromLive();
+}
+
+async function showStudentView(user, binding){
+  $("stuEmail").textContent = user.email;
+  $("stuName").textContent = binding.name;
+  $("stuMeta").textContent = binding.className+" 班・第 "+binding.seat+" 號";
+  showScreen("student");
+  startStuLive(binding);
+}
+
+/* 手動重新整理：直接用 getDoc 再抓一次（監聽斷線、剛回前台時的備援） */
+window.refreshStudentView = async () => {
+  if(!stuCurrentBinding){ toast("請先登入","err"); return; }
+  const b = stuCurrentBinding, cls = b.className, sid = b.studentId;
+  try{
+    const [c1,c2,c3,s1,s2,s3] = await Promise.all([
+      getDoc(doc(db,"periodConfig",cls+"_1")),
+      getDoc(doc(db,"periodConfig",cls+"_2")),
+      getDoc(doc(db,"periodConfig",cls+"_3")),
+      getDoc(doc(db,"scores",cls+"_1_"+sid)),
+      getDoc(doc(db,"scores",cls+"_2_"+sid)),
+      getDoc(doc(db,"scores",cls+"_3_"+sid))
+    ]);
+    const cfgs = [c1,c2,c3], scs = [s1,s2,s3];
+    [1,2,3].forEach((p,i)=>{
+      stuLiveData.configs[p] = cfgs[i].exists() ? cfgs[i].data() : null;
+      stuLiveData.scores[p]  = scs[i].exists()  ? scs[i].data()  : {};
+    });
+    stuSetLiveDot(true);
+    renderStudentFromLive();
+    toast("已更新到最新 ✓");
+  }catch(e){
+    console.error("手動重新整理失敗", e);
+    stuSetLiveDot(false);
+    toast("重新整理失敗，請檢查網路","err");
+  }
+};
+
+/* 回到前台時自動重抓一次（手機切換 App / 從 LINE 跳回來常卡在舊畫面） */
+document.addEventListener("visibilitychange", ()=>{
+  if(!document.hidden && stuCurrentBinding && !$("S-student").classList.contains("hidden")){
+    refreshStudentView();
+  }
+});
 
 // scoreColor already defined above
 
